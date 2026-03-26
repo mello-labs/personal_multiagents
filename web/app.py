@@ -51,8 +51,25 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # Helpers
 # ---------------------------------------------------------------------------
 
+_REDIS_WARN = "Redis indisponível — configure REDIS_URL no Railway."
+
+
+def _safe(fn, fallback):
+    """Executa fn(); retorna fallback se Redis falhar."""
+    try:
+        return fn()
+    except Exception:
+        return fallback
+
+
 def _summary_ctx() -> dict:
-    return {"summary": orchestrator.get_system_summary()}
+    summary = _safe(orchestrator.get_system_summary, {
+        "total_tasks": 0, "pending_tasks": 0, "completed_tasks": 0,
+        "active_focus": False, "pending_alerts": 0,
+        "guard_running": focus_guard.is_running(),
+        "redis_ok": False,
+    })
+    return {"summary": summary}
 
 
 # ---------------------------------------------------------------------------
@@ -77,14 +94,18 @@ async def health():
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     ctx = _summary_ctx()
-    ctx["agenda"] = memory.get_today_agenda()
-    ctx["tasks"] = memory.list_all_tasks()
+    ctx["agenda"] = _safe(memory.get_today_agenda, [])
+    ctx["tasks"]  = _safe(memory.list_all_tasks, [])
+    ctx["redis_warn"] = _REDIS_WARN if not ctx["summary"].get("redis_ok") else ""
     return templates.TemplateResponse(request, "index.html", ctx)
 
 
 @app.post("/chat", response_class=HTMLResponse)
 async def chat(request: Request, message: str = Form(...)):
-    response = orchestrator.process(message)
+    try:
+        response = orchestrator.process(message)
+    except Exception as e:
+        response = f"⚠️ {_REDIS_WARN} ({e})"
     return templates.TemplateResponse(
         request,
         "partials/chat_message.html",
@@ -102,14 +123,16 @@ async def status(request: Request):
 @app.get("/agenda", response_class=HTMLResponse)
 async def agenda(request: Request):
     return templates.TemplateResponse(
-        request, "partials/agenda.html", {"blocks": memory.get_today_agenda()}
+        request, "partials/agenda.html",
+        {"blocks": _safe(memory.get_today_agenda, [])}
     )
 
 
 @app.get("/tasks", response_class=HTMLResponse)
 async def tasks(request: Request):
     return templates.TemplateResponse(
-        request, "partials/tasks.html", {"tasks": memory.list_all_tasks()}
+        request, "partials/tasks.html",
+        {"tasks": _safe(memory.list_all_tasks, [])}
     )
 
 
@@ -120,27 +143,28 @@ async def create_task(
     priority: str = Form("Média"),
     scheduled_time: str = Form(""),
 ):
-    memory.create_task(
-        title=title,
-        priority=priority,
+    _safe(lambda: memory.create_task(
+        title=title, priority=priority,
         scheduled_time=scheduled_time or None,
-    )
+    ), None)
     return templates.TemplateResponse(
-        request, "partials/tasks.html", {"tasks": memory.list_all_tasks()}
+        request, "partials/tasks.html",
+        {"tasks": _safe(memory.list_all_tasks, [])}
     )
 
 
 @app.post("/task/{task_id}/complete", response_class=HTMLResponse)
 async def complete_task(request: Request, task_id: int):
-    memory.update_task_status(task_id, "Concluído")
+    _safe(lambda: memory.update_task_status(task_id, "Concluído"), None)
     return templates.TemplateResponse(
-        request, "partials/tasks.html", {"tasks": memory.list_all_tasks()}
+        request, "partials/tasks.html",
+        {"tasks": _safe(memory.list_all_tasks, [])}
     )
 
 
 @app.post("/sync", response_class=HTMLResponse)
 async def sync(request: Request):
-    count = notion_sync.sync_differential()
+    count = _safe(notion_sync.sync_differential, 0)
     ctx = _summary_ctx()
     ctx["sync_msg"] = f"{count} tarefa(s) sincronizada(s)."
     return templates.TemplateResponse(request, "partials/status.html", ctx)
@@ -148,9 +172,10 @@ async def sync(request: Request):
 
 @app.post("/block/{block_id}/complete", response_class=HTMLResponse)
 async def complete_block(request: Request, block_id: int):
-    memory.mark_block_completed(block_id, True)
+    _safe(lambda: memory.mark_block_completed(block_id, True), None)
     return templates.TemplateResponse(
-        request, "partials/agenda.html", {"blocks": memory.get_today_agenda()}
+        request, "partials/agenda.html",
+        {"blocks": _safe(memory.get_today_agenda, [])}
     )
 
 
