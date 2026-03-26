@@ -29,9 +29,11 @@ NOTION_API_BASE: str = "https://api.notion.com/v1"
 NOTION_API_VERSION: str = "2022-06-28"
 
 # ---------------------------------------------------------------------------
-# Memória / persistência
+# Memória / persistência (Redis)
 # ---------------------------------------------------------------------------
 BASE_DIR = Path(__file__).parent
+REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+# Mantido para compatibilidade com scripts antigos (não usado com Redis)
 MEMORY_DB_PATH: str = os.getenv("MEMORY_DB_PATH", str(BASE_DIR / "memory.db"))
 
 # ---------------------------------------------------------------------------
