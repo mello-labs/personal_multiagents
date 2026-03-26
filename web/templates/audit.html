@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block page_title %}Audit{% endblock %}
 {% block content %}
 
 {% set t = summary.tasks %}
@@ -6,113 +7,92 @@
 {% set a = summary.agenda_today %}
 {% set al = summary.alerts %}
 
-<div class="tile gc-1 gr-1">
-  <div class="tile-hd"><span class="tile-lbl">Alertas</span><span class="tile-ico">⧖</span></div>
-  <div class="stat">
-    <div class="stat-n {% if al.pending > 0 %}stat-red{% else %}stat-dim{% endif %}">{{ al.pending }}</div>
-    <div class="stat-s">pendentes agora</div>
+<div class="section-title">Audit</div>
+
+<div class="metrics">
+  <div class="metric {% if al.pending > 0 %}m-red{% else %}m-dim{% endif %}">
+    <div class="metric-lbl">Alertas</div>
+    <div class="metric-val {% if al.pending > 0 %}v-red{% else %}v-dim{% endif %}">{{ al.pending }}</div>
+    <div class="metric-sub">pendentes</div>
+  </div>
+  <div class="metric {% if f.on_track %}m-green{% else %}m-red{% endif %}">
+    <div class="metric-lbl">Foco</div>
+    <div class="metric-val v-text {% if f.on_track %}v-green{% else %}v-red{% endif %}">{% if f.on_track %}Estavel{% else %}Desvio{% endif %}</div>
+    <div class="metric-sub">guard {% if f.guard_running %}ativo{% else %}off{% endif %}</div>
   </div>
 </div>
 
-<div class="tile gc-2 gr-1">
-  <div class="tile-hd"><span class="tile-lbl">Foco</span><span class="tile-ico">⍟</span></div>
-  <div class="stat">
-    <div class="stat-n stat-label">
-      {% if f.on_track %}<span class="c-green">● estável</span>{% else %}<span class="c-red">● desvio</span>{% endif %}
+{# ── Eventos ── #}
+<div class="card">
+  <div class="card-hd"><span class="card-lbl">Desvios e Reagendamentos</span></div>
+  {% if audit_events %}
+    {% for event in audit_events %}
+    <div class="ls-item">
+      <div class="ls-top">
+        <span class="ls-title">{{ event.title }}</span>
+        <span class="badge {% if event.level == 'error' %}badge-err{% elif event.level == 'warning' %}badge-warn{% else %}badge-ok{% endif %}">{{ event.event_type }}</span>
+      </div>
+      {% if event.details %}<div class="ls-detail">{{ event.details }}</div>{% endif %}
+      <div class="ls-meta">
+        <span>{{ event.created_at }}</span>
+        <span>{{ event.agent }}</span>
+        {% if event.related_id %}<span>ref {{ event.related_id }}</span>{% endif %}
+      </div>
     </div>
-    <div class="stat-s">guard {% if f.guard_running %}ativo{% else %}off{% endif %}</div>
-  </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">Sem eventos</div>
+  {% endif %}
 </div>
 
-<div class="tile gc-3 gr-1">
-  <div class="tile-hd"><span class="tile-lbl">Agenda</span><span class="tile-ico">◬</span></div>
-  <div class="stat">
-    <div class="stat-n stat-green">{{ a.completed }}<span class="stat-total">/{{ a.total_blocks }}</span></div>
-    <div class="stat-s">blocos concluídos hoje</div>
-  </div>
-</div>
-
-<div class="tile gc-4 gr-1">
-  <div class="tile-hd"><span class="tile-lbl">Tarefas</span><span class="tile-ico">⨂</span></div>
-  <div class="stat">
-    <div class="stat-n stat-blue">{{ t.a_fazer }}</div>
-    <div class="stat-s">{{ t.em_progresso }} em progresso · {{ t.concluido }} concluídas</div>
-  </div>
-</div>
-
-<div class="tile tile-col gc-1-3 gr-2-4">
-  <div class="tile-hd"><span class="tile-lbl">Desvios e Reagendamentos</span></div>
-  <div class="tile-scroll list">
-    {% if audit_events %}
-      {% for event in audit_events %}
-      <div class="list-item">
-        <div class="list-top">
-          <strong>{{ event.title }}</strong>
-          <span class="badge {% if event.level == 'error' %}err{% elif event.level == 'warning' %}warn{% else %}ok{% endif %}">{{ event.event_type }}</span>
-        </div>
-        {% if event.details %}<div class="subtle">{{ event.details }}</div>{% endif %}
-        <div class="meta">
-          <span>{{ event.created_at }}</span>
-          <span>{{ event.agent }}</span>
-          {% if event.related_id %}<span>ref {{ event.related_id }}</span>{% endif %}
-        </div>
+{# ── Alertas ── #}
+<div class="card">
+  <div class="card-hd"><span class="card-lbl">Alertas</span></div>
+  {% if alerts %}
+    {% for alert in alerts %}
+    <div class="ls-item">
+      <div class="ls-top">
+        <span class="ls-title">{{ alert.message }}</span>
+        <span class="badge {% if alert.acknowledged %}badge-ok{% else %}badge-warn{% endif %}">{{ alert.alert_type }}</span>
       </div>
-      {% endfor %}
-    {% else %}
-      <div class="empty">Sem eventos de auditoria</div>
-    {% endif %}
-  </div>
-</div>
-
-<div class="tile tile-col gc-3-5 gr-2-4">
-  <div class="tile-hd"><span class="tile-lbl">Histórico de Alertas</span></div>
-  <div class="tile-scroll list">
-    {% if alerts %}
-      {% for alert in alerts %}
-      <div class="list-item">
-        <div class="list-top">
-          <strong>{{ alert.message }}</strong>
-          <span class="badge {% if alert.acknowledged %}ok{% else %}warn{% endif %}">{{ alert.alert_type }}</span>
-        </div>
-        <div class="meta">
-          <span>{{ alert.created_at }}</span>
-          <span>{% if alert.acknowledged %}ack{% else %}pendente{% endif %}</span>
-          <span>alerta {{ alert.id }}</span>
-        </div>
+      <div class="ls-meta">
+        <span>{{ alert.created_at }}</span>
+        <span>{% if alert.acknowledged %}ack{% else %}pendente{% endif %}</span>
+        <span>#{{ alert.id }}</span>
       </div>
-      {% endfor %}
-    {% else %}
-      <div class="empty">Sem alertas registrados</div>
-    {% endif %}
-  </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">Sem alertas</div>
+  {% endif %}
 </div>
 
-<div class="tile tile-col gc-1-3 gr-4-6">
-  <div class="tile-hd"><span class="tile-lbl">Handoffs Recentes</span></div>
-  <div class="tile-scroll list">
-    {% if handoffs %}
-      {% for handoff in handoffs %}
-      <div class="list-item">
-        <div class="list-top">
-          <strong>{{ handoff.source_agent }} → {{ handoff.target_agent }}</strong>
-          <span class="badge {% if handoff.status == 'error' %}err{% elif handoff.status == 'success' %}ok{% else %}warn{% endif %}">{{ handoff.status }}</span>
-        </div>
-        <div class="subtle mono">{{ handoff.action }}</div>
-        <div class="meta">
-          <span>{{ handoff.created_at }}</span>
-          <span>handoff {{ handoff.id }}</span>
-        </div>
+{# ── Handoffs ── #}
+<div class="card">
+  <div class="card-hd"><span class="card-lbl">Handoffs</span></div>
+  {% if handoffs %}
+    {% for h in handoffs %}
+    <div class="ls-item">
+      <div class="ls-top">
+        <span class="ls-title">{{ h.source_agent }} &rarr; {{ h.target_agent }}</span>
+        <span class="badge {% if h.status == 'error' %}badge-err{% elif h.status == 'success' %}badge-ok{% else %}badge-warn{% endif %}">{{ h.status }}</span>
       </div>
-      {% endfor %}
-    {% else %}
-      <div class="empty">Sem handoffs recentes</div>
-    {% endif %}
-  </div>
+      <div class="ls-detail" style="font-family:var(--mono);font-size:12px">{{ h.action }}</div>
+      <div class="ls-meta">
+        <span>{{ h.created_at }}</span>
+        <span>#{{ h.id }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">Sem handoffs</div>
+  {% endif %}
 </div>
 
-<div class="tile tile-col gc-3-5 gr-4-6">
-  <div class="tile-hd"><span class="tile-lbl">Log do Sistema</span></div>
-  <div class="log-pane">{% if log_lines %}{% for line in log_lines %}{{ line }}{% endfor %}{% else %}Sem linhas de log disponíveis.{% endif %}</div>
+{# ── Log ── #}
+<div class="card">
+  <div class="card-hd"><span class="card-lbl">Log</span></div>
+  <div class="log-pane">{% if log_lines %}{% for line in log_lines %}{{ line }}{% endfor %}{% else %}Sem logs{% endif %}</div>
 </div>
 
 {% endblock %}

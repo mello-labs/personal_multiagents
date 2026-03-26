@@ -1,13 +1,13 @@
-<div class="ab{{ ' done' if b.completed else '' }}" id="ab-{{ b.id }}">
-  <span class="at">{{ b.time_slot }}</span>
-  <span class="an">{{ b.task_title or '—' }}</span>
+<div class="blk{{ ' done' if b.completed else '' }}" id="ab-{{ b.id }}">
+  <span class="blk-time">{{ b.time_slot }}</span>
+  <span class="blk-name{{ ' blk-done' if b.completed else '' }}">{{ b.task_title or '—' }}</span>
   {% if not b.completed %}
-  <button class="abtn"
+  <button class="blk-btn"
           hx-post="/block/{{ b.id }}/complete"
           hx-target="#ab-{{ b.id }}"
           hx-swap="outerHTML"
-          aria-label="Marcar bloco concluído">✓</button>
+          aria-label="Concluir">&#10003;</button>
   {% else %}
-  <span class="c-green" style="font-size:11px">✓</span>
+  <span class="tsk-done-icon">&#10003;</span>
   {% endif %}
 </div>

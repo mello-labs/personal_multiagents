@@ -206,6 +206,7 @@ async def health():
 async def index(request: Request):
     ctx = _summary_ctx()
     ctx["agenda"] = _safe(memory.get_today_agenda, [])
+    ctx["blocks"] = ctx["agenda"]  # alias for partials/agenda.html
     ctx["tasks"] = _safe(memory.list_all_tasks, [])
     ctx["redis_warn"] = "" if ctx["summary"].get("redis_ok") else _REDIS_WARN
     ctx["page_name"] = "dashboard"
@@ -344,6 +345,21 @@ async def tasks(request: Request):
     )
 
 
+@app.get("/tasks-page", response_class=HTMLResponse)
+async def tasks_page(request: Request):
+    ctx = _summary_ctx()
+    ctx["tasks"] = _safe(memory.list_all_tasks, [])
+    ctx["page_name"] = "tasks"
+    return templates.TemplateResponse(request, "tasks_page.html", ctx)
+
+
+@app.get("/chat-page", response_class=HTMLResponse)
+async def chat_page(request: Request):
+    ctx = _summary_ctx()
+    ctx["page_name"] = "chat"
+    return templates.TemplateResponse(request, "chat_page.html", ctx)
+
+
 @app.post("/task", response_class=HTMLResponse)
 async def create_task(
     request: Request,
@@ -389,10 +405,8 @@ async def sync(request: Request):
         count = await asyncio.to_thread(notion_sync.sync_differential)
         sync_msg = f"{count} tarefa(s) sincronizada(s)."
     except Exception as e:
-        sync_msg = f"⚠️ Sync falhou: {str(e)[:80]}"
-    ctx = _summary_ctx()
-    ctx["sync_msg"] = sync_msg
-    return templates.TemplateResponse(request, "partials/status.html", ctx)
+        sync_msg = f"Sync falhou: {str(e)[:80]}"
+    return HTMLResponse(f'<div class="sync-toast">{sync_msg}</div>')
 
 
 @app.post("/block/{block_id}/complete", response_class=HTMLResponse)
