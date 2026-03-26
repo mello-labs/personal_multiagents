@@ -183,6 +183,50 @@
     }
     .tc:hover { border-color: var(--green); color: var(--green); }
 
+    /* ── Grid helpers ── */
+    .gc-1   { grid-column: 1; }
+    .gc-2   { grid-column: 2; }
+    .gc-3   { grid-column: 3; }
+    .gc-4   { grid-column: 4; }
+    .gc-1-3 { grid-column: 1 / 3; }
+    .gr-1   { grid-row: 1; }
+    .gr-2-4 { grid-row: 2 / 4; }
+    .tile-col   { overflow: hidden; display: flex; flex-direction: column; }
+    .tile-scroll { flex: 1; overflow-y: auto; }
+
+    /* ── Stat color helpers ── */
+    .stat-blue  { color: var(--blue); }
+    .stat-green { color: var(--green); }
+    .stat-red   { color: var(--red); }
+    .stat-dim   { color: var(--t3); }
+    .stat-label { font-size: 22px; padding-top: 6px; }
+    .stat-total { font-size: 18px; color: var(--t3); }
+    .c-green    { color: var(--green); }
+    .c-red      { color: var(--red); }
+
+    /* ── Add task button ── */
+    .btn-add {
+      background: var(--blue); border: none; color: #fff;
+      padding: 5px 10px; border-radius: var(--rs); cursor: pointer;
+      font-size: 12px; font-weight: 700; font-family: var(--font);
+    }
+    .btn-add:hover { filter: brightness(1.15); }
+
+    /* ── Sync toast ── */
+    .sync-toast {
+      align-self: end; pointer-events: none;
+      padding: 4px 10px; margin: 0 2px 4px;
+      background: rgba(48,209,88,.1); border-radius: 8px;
+      font-size: 10px; color: var(--green);
+    }
+
+    /* ── Chat loading indicator ── */
+    .chat-spinner {
+      font-size: 10px; color: var(--t3); letter-spacing: 2px;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:.2; } 50% { opacity:1; } }
+
     /* ── Misc ── */
     .empty { padding: 18px; text-align: center; color: var(--t3); font-size: 11px; }
     ::-webkit-scrollbar { width: 3px; }
@@ -191,9 +235,9 @@
     .spin { animation: sp .6s linear infinite; }
     @keyframes sp { to { transform: rotate(360deg); } }
     .htmx-indicator { opacity: 0; transition: opacity .2s; }
-    .htmx-request .htmx-indicator { opacity: 1; display: inline-block; }
+    .htmx-request .htmx-indicator { opacity: 1; }
     .htmx-request .sync-lbl { display: none; }
-    button[disabled] { opacity: .5; cursor: not-allowed; }
+    input:disabled, button:disabled { opacity: .5; cursor: not-allowed; }
   </style>
 </head>
 <body>
