@@ -107,8 +107,12 @@ def _to_dict(data: dict, int_fields: list[str] | None = None) -> dict:
 
 def init_db() -> None:
     """Verifica conexão Redis. Substitui o init_db() do SQLite."""
-    _r().ping()
-    print(f"[Memory] Redis conectado: {REDIS_URL}")
+    try:
+        _r().ping()
+        print(f"[Memory] Redis conectado: {REDIS_URL}")
+    except Exception as e:
+        print(f"[Memory] AVISO: Redis indisponível ({e}). Tentativas serão feitas sob demanda.")
+        # Não levanta exceção — o app sobe; falha nas operações reais se Redis não estiver acessível
 
 
 # =============================================================================
