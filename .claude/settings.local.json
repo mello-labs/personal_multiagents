@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from dotenv import dotenv_values; env = dotenv_values\\(''.env''\\); keys = [''OPENAI_API_KEY'', ''NOTION_TOKEN'', ''NOTION_TASKS_DB_ID'', ''NOTION_AGENDA_DB_ID'']; [print\\(f''{k}: {\"\"OK\"\" if env.get\\(k\\) and env[k].strip\\(\\) else \"\"FALTANDO\"\"}''\\) for k in keys]\")",
+      "Bash(source .venv/bin/activate)",
+      "Bash(python3 main.py sync)",
+      "mcp__1c43dfb3-9216-4939-82ec-f3e71fc0fc1f__notion-update-page",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(python3 -m pip install fastapi \"uvicorn[standard]\" jinja2 python-multipart google-api-python-client google-auth-httplib2 google-auth-oauthlib tzlocal anyio --quiet)",
+      "Bash(python3 -m venv venv)",
+      "Bash(/Users/nettomello/CODIGOS/multiagentes/.venv/bin/pip install:*)",
+      "Bash(.venv/bin/python -c \":*)",
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(.venv/bin/python -c \"import fastapi, uvicorn, jinja2; print\\(''''✅ FastAPI stack OK''''\\)\")",
+      "Bash(.venv/bin/python -c \"import agents.retrospective, agents.calendar_sync; print\\(''''✅ Novos agentes OK''''\\)\")",
+      "Bash(.venv/bin/python -m pytest tests/ -q)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(ls /Users/nettomello/CODIGOS/multiagentes/*.toml)",
+      "Bash(/Users/nettomello/CODIGOS/multiagentes/.env.example:*)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(railway status:*)"
+    ]
+  }
+}
