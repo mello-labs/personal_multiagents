@@ -57,13 +57,17 @@ def _summary_ctx() -> dict:
 
 @app.get("/health")
 async def health():
-    """Lightweight health check para Railway e uptime monitors."""
+    """Lightweight health check para Railway — sempre retorna 200 se o processo está vivo."""
+    result: dict = {"status": "ok"}
     try:
-        # Verifica DB com query mínima
         tasks_count = len(memory.list_all_tasks())
-        return JSONResponse({"status": "ok", "db": "ok", "tasks": tasks_count})
+        result["db"] = "ok"
+        result["tasks"] = tasks_count
     except Exception as e:
-        return JSONResponse({"status": "error", "detail": str(e)}, status_code=503)
+        # Redis pode ainda não estar disponível; servidor segue respondendo
+        result["db"] = "unavailable"
+        result["db_error"] = str(e)[:120]
+    return JSONResponse(result)
 
 
 @app.get("/", response_class=HTMLResponse)
