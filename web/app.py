@@ -15,7 +15,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from agents import orchestrator, focus_guard
@@ -43,8 +44,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Multiagentes", lifespan=lifespan)
-# Starlette 0.36+ usa request como primeiro argumento em TemplateResponse
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(str(BASE_DIR / "static" / "favicon.ico"))
 
 
 # ---------------------------------------------------------------------------

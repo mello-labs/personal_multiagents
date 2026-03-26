@@ -188,13 +188,12 @@
     ::-webkit-scrollbar { width: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--c3); border-radius: 2px; }
-    .spin {
-      display: none; width: 10px; height: 10px;
-      border: 2px solid var(--c3); border-top-color: var(--blue);
-      border-radius: 50%; animation: sp .6s linear infinite;
-    }
-    .htmx-request .spin { display: inline-block; }
+    .spin { animation: sp .6s linear infinite; }
     @keyframes sp { to { transform: rotate(360deg); } }
+    .htmx-indicator { opacity: 0; transition: opacity .2s; }
+    .htmx-request .htmx-indicator { opacity: 1; display: inline-block; }
+    .htmx-request .sync-lbl { display: none; }
+    button[disabled] { opacity: .5; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -207,8 +206,10 @@
             hx-post="/sync"
             hx-target="#stats-row"
             hx-swap="outerHTML"
-            hx-indicator="#sync-sp">
-      <span id="sync-sp" class="spin"></span>↻ Sync
+            hx-indicator="#sync-sp"
+            hx-disabled-elt="this">
+      <span id="sync-sp" class="htmx-indicator spin">↻</span>
+      <span class="sync-lbl">↻ Sync</span>
     </button>
   </header>
 
