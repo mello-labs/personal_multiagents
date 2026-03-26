@@ -27,15 +27,20 @@
 #
 #   alert:{id}                 HASH
 #   alerts:pending             ZSET scored por created_at
+#   alerts:all                 ZSET scored por created_at
 #   alerts:next_id             COUNTER
+#
+#   audit:{id}                 HASH
+#   audit:events               ZSET scored por created_at
+#   audit:next_id              COUNTER
 
 import json
 import subprocess
 import sys
-import time
 import threading
-from datetime import datetime, date
-from typing import Optional, Any
+import time
+from datetime import date, datetime
+from typing import Any, Optional
 
 import redis as redis_lib
 
@@ -81,7 +86,10 @@ def _r() -> redis_lib.Redis:
         try:
             client.ping()
             print(f"[Memory] Redis conectado: {REDIS_URL}")
-        except (redis_lib.exceptions.ConnectionError, redis_lib.exceptions.TimeoutError):
+        except (
+            redis_lib.exceptions.ConnectionError,
+            redis_lib.exceptions.TimeoutError,
+        ):
             if _CAN_AUTOSTART:
                 print("[Memory] Redis offline — tentando iniciar redis-server local...")
                 _start_local_redis()
@@ -99,6 +107,7 @@ def _r() -> redis_lib.Redis:
 # ---------------------------------------------------------------------------
 # Helpers internos
 # ---------------------------------------------------------------------------
+
 
 def _now() -> str:
     return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
@@ -147,19 +156,23 @@ def _to_dict(data: dict, int_fields: list[str] | None = None) -> dict:
 # INIT
 # =============================================================================
 
+
 def init_db() -> None:
     """Verifica conexão Redis. Substitui o init_db() do SQLite."""
     try:
         _r().ping()
         print(f"[Memory] Redis conectado: {REDIS_URL}")
     except Exception as e:
-        print(f"[Memory] AVISO: Redis indisponível ({e}). Tentativas serão feitas sob demanda.")
+        print(
+            f"[Memory] AVISO: Redis indisponível ({e}). Tentativas serão feitas sob demanda."
+        )
         # Não levanta exceção — o app sobe; falha nas operações reais se Redis não estiver acessível
 
 
 # =============================================================================
 # TASKS
 # =============================================================================
+
 
 def create_task(
     title: str,
@@ -191,7 +204,9 @@ def create_task(
         return task_id
 
 
-def update_task_status(task_id: int, status: str, actual_time: Optional[str] = None) -> None:
+def update_task_status(
+    task_id: int, status: str, actual_time: Optional[str] = None
+) -> None:
     r = _r()
     key = f"task:{task_id}"
     r.hset(key, "status", status)
@@ -223,7 +238,9 @@ def get_tasks_by_status(status: str) -> list[dict]:
 
 def get_today_tasks() -> list[dict]:
     today = date.today().isoformat()
-    return [t for t in list_all_tasks() if (t.get("scheduled_time") or "").startswith(today)]
+    return [
+        t for t in list_all_tasks() if (t.get("scheduled_time") or "").startswith(today)
+    ]
 
 
 def list_all_tasks() -> list[dict]:
@@ -249,12 +266,16 @@ def update_task_notion_id(task_id: int, notion_page_id: str) -> None:
 # AGENDA BLOCKS
 # =============================================================================
 
+
 def create_agenda_block(
     block_date: str,
     time_slot: str,
     task_title: str,
     task_id: Optional[int] = None,
     notion_page_id: Optional[str] = None,
+    source_block_id: Optional[int] = None,
+    created_by: str = "manual",
+    reschedule_count: int = 0,
 ) -> int:
     with _lock:
         block_id = _next_id("blocks:next_id")
@@ -267,41 +288,104 @@ def create_agenda_block(
             "task_title": task_title,
             "notion_page_id": notion_page_id or "",
             "completed": "0",
+            "rescheduled": "0",
+            "rescheduled_to_block_id": "",
+            "source_block_id": str(source_block_id)
+            if source_block_id is not None
+            else "",
+            "created_by": created_by,
+            "reschedule_count": str(reschedule_count),
             "created_at": now,
             "updated_at": now,
         }
         r = _r()
         r.hset(f"block:{block_id}", mapping=data)
-        r.zadd(f"blocks:date:{block_date}", {str(block_id): _ts_from_timeslot(time_slot)})
+        r.zadd(
+            f"blocks:date:{block_date}", {str(block_id): _ts_from_timeslot(time_slot)}
+        )
         if notion_page_id:
             r.set(f"blocks:notion:{notion_page_id}", block_id)
         return block_id
 
 
-def get_today_agenda() -> list[dict]:
-    today = date.today().isoformat()
+def get_today_agenda(include_rescheduled: bool = False) -> list[dict]:
+    return get_agenda_for_date(
+        date.today().isoformat(), include_rescheduled=include_rescheduled
+    )
+
+
+def get_agenda_for_date(
+    block_date: str, include_rescheduled: bool = False
+) -> list[dict]:
     r = _r()
-    block_ids = r.zrange(f"blocks:date:{today}", 0, -1)
+    block_ids = r.zrange(f"blocks:date:{block_date}", 0, -1)
     blocks = []
     for bid in block_ids:
         data = r.hgetall(f"block:{bid}")
         if data:
+            if not include_rescheduled and data.get("rescheduled", "0") == "1":
+                continue
             data["id"] = int(bid)
-            blocks.append(_to_dict(data, int_fields=["id", "completed"]))
+            blocks.append(
+                _to_dict(
+                    data,
+                    int_fields=[
+                        "id",
+                        "completed",
+                        "rescheduled",
+                        "rescheduled_to_block_id",
+                        "source_block_id",
+                        "reschedule_count",
+                    ],
+                )
+            )
     return blocks
 
 
-def mark_block_completed(block_id: int, completed: bool = True) -> None:
+def get_block(block_id: int) -> Optional[dict]:
+    data = _r().hgetall(f"block:{block_id}")
+    if not data:
+        return None
+    data["id"] = int(block_id)
+    return _to_dict(
+        data,
+        int_fields=[
+            "id",
+            "completed",
+            "rescheduled",
+            "rescheduled_to_block_id",
+            "source_block_id",
+            "reschedule_count",
+        ],
+    )
+
+
+def update_block(block_id: int, **fields: Any) -> None:
     r = _r()
-    r.hset(f"block:{block_id}", "completed", "1" if completed else "0")
-    r.hset(f"block:{block_id}", "updated_at", _now())
+    mapping = {}
+    for key, value in fields.items():
+        if value is None:
+            mapping[key] = ""
+        elif isinstance(value, bool):
+            mapping[key] = "1" if value else "0"
+        else:
+            mapping[key] = str(value)
+    mapping["updated_at"] = _now()
+    r.hset(f"block:{block_id}", mapping=mapping)
+
+
+def mark_block_completed(block_id: int, completed: bool = True) -> None:
+    update_block(block_id, completed=completed)
 
 
 # =============================================================================
 # FOCUS SESSIONS
 # =============================================================================
 
-def start_focus_session(task_id: int, task_title: str, planned_minutes: int = 25) -> int:
+
+def start_focus_session(
+    task_id: int, task_title: str, planned_minutes: int = 25
+) -> int:
     with _lock:
         session_id = _next_id("sessions:next_id")
         now = _now()
@@ -323,7 +407,9 @@ def start_focus_session(task_id: int, task_title: str, planned_minutes: int = 25
         return session_id
 
 
-def end_focus_session(session_id: int, status: str = "completed", notes: Optional[str] = None) -> None:
+def end_focus_session(
+    session_id: int, status: str = "completed", notes: Optional[str] = None
+) -> None:
     r = _r()
     now = _now()
     session = r.hgetall(f"session:{session_id}")
@@ -337,12 +423,15 @@ def end_focus_session(session_id: int, status: str = "completed", notes: Optiona
         except Exception:
             pass
 
-    r.hset(f"session:{session_id}", mapping={
-        "ended_at": now,
-        "status": status,
-        "actual_minutes": actual_minutes,
-        "notes": notes or session.get("notes", ""),
-    })
+    r.hset(
+        f"session:{session_id}",
+        mapping={
+            "ended_at": now,
+            "status": status,
+            "actual_minutes": actual_minutes,
+            "notes": notes or session.get("notes", ""),
+        },
+    )
 
     active = r.get("session:active")
     if active and int(active) == session_id:
@@ -366,6 +455,7 @@ def get_active_focus_session() -> Optional[dict]:
 # =============================================================================
 # AGENT HANDOFFS (auditoria)
 # =============================================================================
+
 
 def log_handoff(
     source_agent: str,
@@ -394,16 +484,22 @@ def log_handoff(
         return handoff_id
 
 
-def update_handoff_result(handoff_id: int, result: Any, status: str = "success") -> None:
-    _r().hset(f"handoff:{handoff_id}", mapping={
-        "result": json.dumps(result),
-        "status": status,
-    })
+def update_handoff_result(
+    handoff_id: int, result: Any, status: str = "success"
+) -> None:
+    _r().hset(
+        f"handoff:{handoff_id}",
+        mapping={
+            "result": json.dumps(result),
+            "status": status,
+        },
+    )
 
 
 # =============================================================================
 # SYSTEM STATE (chave-valor)
 # =============================================================================
+
 
 def set_state(key: str, value: Any) -> None:
     _r().set(f"state:{key}", json.dumps(value))
@@ -423,6 +519,7 @@ def get_state(key: str, default: Any = None) -> Any:
 # ALERTS
 # =============================================================================
 
+
 def create_alert(alert_type: str, message: str) -> int:
     with _lock:
         alert_id = _next_id("alerts:next_id")
@@ -437,6 +534,7 @@ def create_alert(alert_type: str, message: str) -> int:
         r = _r()
         r.hset(f"alert:{alert_id}", mapping=data)
         r.zadd("alerts:pending", {str(alert_id): _ts(now)})
+        r.zadd("alerts:all", {str(alert_id): _ts(now)})
         return alert_id
 
 
@@ -452,6 +550,21 @@ def get_pending_alerts() -> list[dict]:
     return alerts
 
 
+def list_alerts(limit: int = 50, include_acknowledged: bool = True) -> list[dict]:
+    r = _r()
+    alert_ids = r.zrevrange("alerts:all", 0, max(limit - 1, 0))
+    alerts = []
+    for aid in alert_ids:
+        data = r.hgetall(f"alert:{aid}")
+        if not data:
+            continue
+        if not include_acknowledged and data.get("acknowledged", "0") != "0":
+            continue
+        data["id"] = int(aid)
+        alerts.append(_to_dict(data, int_fields=["id", "acknowledged"]))
+    return alerts
+
+
 def acknowledge_alert(alert_id: int) -> None:
     r = _r()
     r.hset(f"alert:{alert_id}", "acknowledged", "1")
@@ -459,8 +572,60 @@ def acknowledge_alert(alert_id: int) -> None:
 
 
 # =============================================================================
+# AUDIT EVENTS
+# =============================================================================
+
+
+def create_audit_event(
+    event_type: str,
+    title: str,
+    details: str = "",
+    level: str = "info",
+    agent: str = "system",
+    payload: Any = None,
+    related_id: Optional[str] = None,
+) -> int:
+    with _lock:
+        event_id = _next_id("audit:next_id")
+        now = _now()
+        data = {
+            "id": str(event_id),
+            "event_type": event_type,
+            "title": title,
+            "details": details,
+            "level": level,
+            "agent": agent,
+            "payload": json.dumps(payload, ensure_ascii=False)
+            if payload is not None
+            else "",
+            "related_id": related_id or "",
+            "created_at": now,
+        }
+        r = _r()
+        r.hset(f"audit:{event_id}", mapping=data)
+        r.zadd("audit:events", {str(event_id): _ts(now)})
+        return event_id
+
+
+def list_audit_events(limit: int = 50, event_type: Optional[str] = None) -> list[dict]:
+    r = _r()
+    event_ids = r.zrevrange("audit:events", 0, max(limit - 1, 0))
+    events = []
+    for eid in event_ids:
+        data = r.hgetall(f"audit:{eid}")
+        if not data:
+            continue
+        if event_type and data.get("event_type") != event_type:
+            continue
+        data["id"] = int(eid)
+        events.append(_to_dict(data, int_fields=["id"]))
+    return events
+
+
+# =============================================================================
 # RETROSPECTIVE QUERIES
 # =============================================================================
+
 
 def get_sessions_since(since_iso: str) -> list[dict]:
     r = _r()
@@ -477,7 +642,8 @@ def get_sessions_since(since_iso: str) -> list[dict]:
 
 def get_completed_tasks_since(since_iso: str) -> list[dict]:
     return [
-        t for t in list_all_tasks()
+        t
+        for t in list_all_tasks()
         if t.get("status") == "Concluído" and (t.get("updated_at") or "") >= since_iso
     ]
 
@@ -486,6 +652,18 @@ def get_handoffs_since(since_iso: str) -> list[dict]:
     r = _r()
     since_ts = _ts(since_iso)
     handoff_ids = r.zrangebyscore("handoffs:all", since_ts, "+inf")
+    handoffs = []
+    for hid in handoff_ids:
+        data = r.hgetall(f"handoff:{hid}")
+        if data:
+            data["id"] = int(hid)
+            handoffs.append(_to_dict(data, int_fields=["id"]))
+    return handoffs
+
+
+def list_recent_handoffs(limit: int = 50) -> list[dict]:
+    r = _r()
+    handoff_ids = r.zrevrange("handoffs:all", 0, max(limit - 1, 0))
     handoffs = []
     for hid in handoff_ids:
         data = r.hgetall(f"handoff:{hid}")

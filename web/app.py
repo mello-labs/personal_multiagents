@@ -11,6 +11,7 @@ import asyncio
 import sys
 import threading
 import uuid
+from collections import deque
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -22,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from agents import focus_guard, notion_sync, orchestrator
+from config import LOG_FILE
 from core import memory
 
 BASE_DIR = Path(__file__).parent
@@ -98,6 +100,24 @@ def _summary_ctx() -> dict:
     return {"summary": summary}
 
 
+def _tail_logs(limit: int = 120) -> list[str]:
+    log_path = Path(LOG_FILE)
+    if not log_path.exists():
+        return []
+    with log_path.open("r", encoding="utf-8", errors="replace") as handle:
+        return list(deque(handle, maxlen=limit))
+
+
+def _audit_ctx() -> dict:
+    return {
+        "summary": _summary_ctx()["summary"],
+        "audit_events": _safe(lambda: memory.list_audit_events(60), []),
+        "alerts": _safe(lambda: memory.list_alerts(30), []),
+        "handoffs": _safe(lambda: memory.list_recent_handoffs(30), []),
+        "log_lines": _tail_logs(120),
+    }
+
+
 def _get_chat_session_id(request: Request) -> tuple[str, bool]:
     current = request.cookies.get(CHAT_SESSION_COOKIE)
     if current:
@@ -148,7 +168,15 @@ async def index(request: Request):
     ctx["agenda"] = _safe(memory.get_today_agenda, [])
     ctx["tasks"] = _safe(memory.list_all_tasks, [])
     ctx["redis_warn"] = "" if ctx["summary"].get("redis_ok") else _REDIS_WARN
+    ctx["page_name"] = "dashboard"
     return templates.TemplateResponse(request, "index.html", ctx)
+
+
+@app.get("/audit", response_class=HTMLResponse)
+async def audit(request: Request):
+    ctx = _audit_ctx()
+    ctx["page_name"] = "audit"
+    return templates.TemplateResponse(request, "audit.html", ctx)
 
 
 # ---------------------------------------------------------------------------

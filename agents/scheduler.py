@@ -8,14 +8,15 @@
 #   - Sincronizar com o Notion Sync Agent
 
 import json
-import sys
 import os
-from datetime import datetime, date, timedelta
+import sys
+from datetime import date, datetime, time, timedelta
 from typing import Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from openai import OpenAI
+
 from config import OPENAI_API_KEY, OPENAI_MODEL
 from core import memory, notifier
 
@@ -48,9 +49,137 @@ e "warnings" (lista de avisos). Exemplo de bloco:
 # Lógica de agendamento local (sem LLM)
 # ---------------------------------------------------------------------------
 
+
 def get_today_schedule() -> list[dict]:
     """Retorna o cronograma de hoje do banco local, ordenado por horário."""
     return memory.get_today_agenda()
+
+
+def _parse_slot_range(
+    block_date: str, time_slot: str
+) -> Optional[tuple[datetime, datetime]]:
+    if "-" not in time_slot:
+        return None
+    try:
+        start_str, end_str = [part.strip() for part in time_slot.split("-", 1)]
+        start_dt = datetime.strptime(f"{block_date} {start_str}", "%Y-%m-%d %H:%M")
+        end_dt = datetime.strptime(f"{block_date} {end_str}", "%Y-%m-%d %H:%M")
+        if end_dt <= start_dt:
+            return None
+        return start_dt, end_dt
+    except ValueError:
+        return None
+
+
+def _format_slot(start_dt: datetime, duration_minutes: int) -> str:
+    end_dt = start_dt + timedelta(minutes=duration_minutes)
+    return f"{start_dt.strftime('%H:%M')}-{end_dt.strftime('%H:%M')}"
+
+
+def _round_up_to_quarter(dt: datetime) -> datetime:
+    base = dt.replace(second=0, microsecond=0)
+    remainder = base.minute % 15
+    if remainder == 0 and base.second == 0 and base.microsecond == 0:
+        return base
+    return base + timedelta(minutes=(15 - remainder))
+
+
+def _find_same_task_future_block(
+    blocks: list[dict],
+    task_id: Optional[int],
+    task_title: str,
+    start_after: datetime,
+    exclude_block_id: int,
+) -> Optional[dict]:
+    normalized_title = task_title.strip().lower()
+    for block in blocks:
+        if (
+            block.get("id") == exclude_block_id
+            or block.get("completed")
+            or block.get("rescheduled")
+        ):
+            continue
+        block_range = _parse_slot_range(
+            block.get("block_date", date.today().isoformat()),
+            block.get("time_slot", ""),
+        )
+        if not block_range:
+            continue
+        block_start, _ = block_range
+        if block_start < start_after:
+            continue
+        same_task_id = task_id is not None and str(block.get("task_id")) == str(task_id)
+        same_title = (block.get("task_title") or "").strip().lower() == normalized_title
+        if same_task_id or same_title:
+            return block
+    return None
+
+
+def _find_available_start(
+    block_date: str,
+    duration_minutes: int,
+    blocks: list[dict],
+    start_after: datetime,
+    exclude_block_ids: set[int],
+) -> datetime:
+    day_start = datetime.combine(
+        datetime.strptime(block_date, "%Y-%m-%d").date(), time(9, 0)
+    )
+    candidate = max(_round_up_to_quarter(start_after), day_start)
+
+    intervals = []
+    for block in blocks:
+        if block.get("id") in exclude_block_ids:
+            continue
+        block_range = _parse_slot_range(
+            block.get("block_date", block_date), block.get("time_slot", "")
+        )
+        if not block_range:
+            continue
+        start_dt, end_dt = block_range
+        intervals.append((start_dt, end_dt))
+
+    intervals.sort(key=lambda item: item[0])
+
+    for start_dt, end_dt in intervals:
+        if end_dt <= candidate:
+            continue
+        if candidate + timedelta(minutes=duration_minutes) <= start_dt:
+            return candidate
+        if candidate < end_dt:
+            candidate = _round_up_to_quarter(end_dt)
+
+    return candidate
+
+
+def find_next_available_slot(
+    duration_minutes: int,
+    start_after: Optional[datetime] = None,
+    max_days_ahead: int = 3,
+) -> tuple[str, str]:
+    reference = start_after or datetime.now()
+
+    for offset in range(max_days_ahead + 1):
+        target_date = (reference.date() + timedelta(days=offset)).isoformat()
+        day_start = (
+            reference
+            if offset == 0
+            else datetime.combine(reference.date() + timedelta(days=offset), time(9, 0))
+        )
+        blocks = memory.get_agenda_for_date(target_date)
+        start_dt = _find_available_start(
+            target_date,
+            duration_minutes,
+            blocks,
+            day_start,
+            exclude_block_ids=set(),
+        )
+        return target_date, _format_slot(start_dt, duration_minutes)
+
+    fallback_date = reference.date().isoformat()
+    return fallback_date, _format_slot(
+        _round_up_to_quarter(reference), duration_minutes
+    )
 
 
 def add_schedule_block(
@@ -88,6 +217,90 @@ def complete_block(block_id: int) -> None:
     """Marca um bloco de agenda como concluído."""
     memory.mark_block_completed(block_id, True)
     notifier.success(f"Bloco {block_id} marcado como concluído.", AGENT_NAME)
+
+
+def auto_reschedule_block(
+    block_id: int,
+    reason: str = "Bloco atrasado detectado pelo Focus Guard.",
+    reference_time: Optional[datetime] = None,
+    max_reschedules: int = 3,
+) -> dict:
+    block = memory.get_block(block_id)
+    if not block:
+        return {"status": "missing", "reason": "Bloco não encontrado."}
+    if block.get("completed"):
+        return {"status": "skipped", "reason": "Bloco já concluído."}
+    if block.get("rescheduled"):
+        return {"status": "skipped", "reason": "Bloco já foi reagendado."}
+    if int(block.get("reschedule_count") or 0) >= max_reschedules:
+        return {"status": "skipped", "reason": "Limite de reagendamentos atingido."}
+
+    block_date = block.get("block_date") or date.today().isoformat()
+    block_range = _parse_slot_range(block_date, block.get("time_slot", ""))
+    if not block_range:
+        return {"status": "skipped", "reason": "Time slot inválido."}
+
+    start_dt, end_dt = block_range
+    duration_minutes = max(int((end_dt - start_dt).total_seconds() / 60), 25)
+    now_dt = reference_time or datetime.now()
+    same_day_blocks = memory.get_agenda_for_date(block_date)
+
+    existing = _find_same_task_future_block(
+        same_day_blocks,
+        block.get("task_id"),
+        block.get("task_title", ""),
+        start_after=now_dt,
+        exclude_block_id=block_id,
+    )
+    if existing:
+        memory.update_block(
+            block_id,
+            rescheduled=True,
+            rescheduled_to_block_id=existing["id"],
+        )
+        return {
+            "status": "linked",
+            "original_block_id": block_id,
+            "rescheduled_to_block_id": existing["id"],
+            "new_time_slot": existing.get("time_slot"),
+            "new_block_date": existing.get("block_date"),
+            "reason": "Já existia um bloco futuro para esta tarefa.",
+        }
+
+    target_date, new_time_slot = find_next_available_slot(
+        duration_minutes,
+        start_after=max(now_dt, end_dt),
+    )
+    new_block_id = memory.create_agenda_block(
+        block_date=target_date,
+        time_slot=new_time_slot,
+        task_title=block.get("task_title", "Sem título"),
+        task_id=block.get("task_id"),
+        notion_page_id=block.get("notion_page_id"),
+        source_block_id=block.get("source_block_id") or block_id,
+        created_by="auto_reschedule",
+        reschedule_count=int(block.get("reschedule_count") or 0) + 1,
+    )
+    memory.update_block(
+        block_id,
+        rescheduled=True,
+        rescheduled_to_block_id=new_block_id,
+    )
+
+    notifier.warning(
+        f"Bloco {block_id} reagendado automaticamente para {target_date} {new_time_slot}.",
+        AGENT_NAME,
+    )
+    return {
+        "status": "created",
+        "original_block_id": block_id,
+        "rescheduled_to_block_id": new_block_id,
+        "old_time_slot": block.get("time_slot"),
+        "new_time_slot": new_time_slot,
+        "new_block_date": target_date,
+        "duration_minutes": duration_minutes,
+        "reason": reason,
+    }
 
 
 def get_prioritized_tasks() -> list[dict]:
@@ -128,9 +341,7 @@ def detect_schedule_conflicts() -> list[str]:
 
     for start_time, tasks in seen_slots.items():
         if len(tasks) > 1:
-            conflicts.append(
-                f"Conflito em {start_time}: {', '.join(tasks)}"
-            )
+            conflicts.append(f"Conflito em {start_time}: {', '.join(tasks)}")
 
     return conflicts
 
@@ -175,6 +386,7 @@ def calculate_schedule_load(blocks: Optional[list] = None) -> dict:
 # ---------------------------------------------------------------------------
 # Sugestão de agenda via LLM
 # ---------------------------------------------------------------------------
+
 
 def suggest_agenda_with_llm(
     tasks: Optional[list[dict]] = None,
@@ -282,6 +494,7 @@ def apply_llm_suggestion(suggestion: dict, auto_sync_notion: bool = False) -> li
 # Handoff entry point — chamado pelo Orchestrator
 # ---------------------------------------------------------------------------
 
+
 def handle_handoff(payload: dict) -> dict:
     """
     Ponto de entrada para handoffs do Orchestrator.
@@ -319,9 +532,7 @@ def handle_handoff(payload: dict) -> dict:
             result = {"message": "Bloco marcado como concluído."}
 
         elif action == "suggest_agenda":
-            suggestion = suggest_agenda_with_llm(
-                context=payload.get("context", "")
-            )
+            suggestion = suggest_agenda_with_llm(context=payload.get("context", ""))
             if payload.get("apply", False):
                 ids = apply_llm_suggestion(suggestion)
                 result = {"suggestion": suggestion, "applied_blocks": ids}
@@ -331,6 +542,14 @@ def handle_handoff(payload: dict) -> dict:
         elif action == "get_prioritized_tasks":
             tasks = get_prioritized_tasks()
             result = {"tasks": tasks, "count": len(tasks)}
+
+        elif action == "auto_reschedule_block":
+            result = auto_reschedule_block(
+                block_id=payload["block_id"],
+                reason=payload.get(
+                    "reason", "Bloco atrasado detectado automaticamente."
+                ),
+            )
 
         else:
             raise ValueError(f"Ação desconhecida: '{action}'")

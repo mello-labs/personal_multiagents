@@ -30,3 +30,33 @@ def test_chat_reaproveita_historico_da_sessao(mem, monkeypatch):
         {"role": "user", "content": "primeira pergunta"},
         {"role": "assistant", "content": "eco:primeira pergunta"},
     ]
+
+
+def test_audit_page_exibe_eventos_alertas_handoffs_e_logs(mem, monkeypatch, tmp_path):
+    monkeypatch.setattr(web_app.focus_guard, "start_guard", lambda: None)
+    monkeypatch.setattr(web_app.focus_guard, "stop_guard", lambda: None)
+    monkeypatch.setattr(web_app.focus_guard, "is_running", lambda: False)
+
+    log_file = tmp_path / "agent_system.log"
+    log_file.write_text("linha 1\nlinha 2 do log\n", encoding="utf-8")
+    monkeypatch.setattr(web_app, "LOG_FILE", str(log_file))
+
+    fake = fakeredis.FakeRedis(decode_responses=True)
+    web_app.memory._redis_client = fake
+    web_app.memory.create_alert("deviation_moderate", "Atraso detectado")
+    web_app.memory.create_audit_event(
+        event_type="auto_reschedule",
+        title="Bloco reagendado",
+        details="09:00-10:00 → 11:00-12:00",
+        agent="focus_guard",
+    )
+    web_app.memory.log_handoff("orchestrator", "scheduler", "get_today_schedule")
+
+    with TestClient(app) as client:
+        response = client.get("/audit")
+
+    assert response.status_code == 200
+    assert "Bloco reagendado" in response.text
+    assert "Atraso detectado" in response.text
+    assert "orchestrator → scheduler" in response.text
+    assert "linha 2 do log" in response.text

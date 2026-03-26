@@ -10,12 +10,12 @@
 # O loop principal usa a lib `schedule` para disparos periódicos.
 # A thread roda como daemon e é parada por um Event.
 
+import json
+import os
+import sys
 import threading
 import time
-import json
-import sys
-import os
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import Optional
 
 import schedule
@@ -23,9 +23,16 @@ import schedule
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from openai import OpenAI
-from config import OPENAI_API_KEY, OPENAI_MODEL, FOCUS_CHECK_INTERVAL_MINUTES, NOTION_SYNC_INTERVAL_MINUTES
-from core import memory, notifier
+
 from agents import notion_sync as _notion_sync
+from agents import scheduler as _scheduler
+from config import (
+    FOCUS_CHECK_INTERVAL_MINUTES,
+    NOTION_SYNC_INTERVAL_MINUTES,
+    OPENAI_API_KEY,
+    OPENAI_MODEL,
+)
+from core import memory, notifier
 
 AGENT_NAME = "focus_guard"
 _client = OpenAI(api_key=OPENAI_API_KEY)
@@ -57,6 +64,7 @@ Retorne JSON com:
 # Análise de progresso
 # ---------------------------------------------------------------------------
 
+
 def analyze_progress() -> dict:
     """
     Compara agenda planejada vs. realidade atual.
@@ -78,7 +86,9 @@ def analyze_progress() -> dict:
             try:
                 start_str = slot.split("-")[0].strip()
                 end_str = slot.split("-")[1].strip()
-                start_t = datetime.strptime(f"{date.today()} {start_str}", "%Y-%m-%d %H:%M")
+                start_t = datetime.strptime(
+                    f"{date.today()} {start_str}", "%Y-%m-%d %H:%M"
+                )
                 end_t = datetime.strptime(f"{date.today()} {end_str}", "%Y-%m-%d %H:%M")
 
                 if end_t < now and not block.get("completed"):
@@ -155,19 +165,77 @@ def analyze_with_llm(progress: dict) -> dict:
 # Loop de verificação periódica
 # ---------------------------------------------------------------------------
 
+
+def _auto_reschedule_overdue_blocks(progress: dict) -> list[dict]:
+    actions = []
+    overdue_blocks = progress.get("overdue_blocks", [])
+    if not overdue_blocks:
+        return actions
+
+    for block in overdue_blocks:
+        result = _scheduler.auto_reschedule_block(
+            block_id=block["id"],
+            reason="Bloco vencido detectado no check periódico do Focus Guard.",
+        )
+        status = result.get("status")
+        if status not in {"created", "linked"}:
+            continue
+
+        details = f"{block.get('time_slot')} → {result.get('new_block_date')} {result.get('new_time_slot')}"
+        if status == "linked":
+            details = (
+                f"{block.get('time_slot')} → bloco existente #{result.get('rescheduled_to_block_id')} "
+                f"em {result.get('new_block_date')} {result.get('new_time_slot')}"
+            )
+
+        memory.create_audit_event(
+            event_type="auto_reschedule",
+            title=f"Bloco reagendado: {block.get('task_title', 'Sem título')}",
+            details=details,
+            level="warning",
+            agent=AGENT_NAME,
+            payload=result,
+            related_id=str(block["id"]),
+        )
+        actions.append(result)
+
+    return actions
+
+
 def _run_focus_check() -> None:
     """Executado pelo scheduler a cada intervalo configurado."""
     notifier.focus_alert("═══ CHECK-IN DO FOCUS GUARD ═══", AGENT_NAME)
 
     progress = analyze_progress()
     analysis = analyze_with_llm(progress)
+    rescheduled_actions = _auto_reschedule_overdue_blocks(progress)
 
     # Salva estado atual
-    memory.set_state(_state_key, {
-        "last_check": datetime.now().isoformat(),
-        "on_track": analysis.get("on_track", True),
-        "deviation_level": analysis.get("deviation_level", "none"),
-    })
+    memory.set_state(
+        _state_key,
+        {
+            "last_check": datetime.now().isoformat(),
+            "on_track": analysis.get("on_track", True),
+            "deviation_level": analysis.get("deviation_level", "none"),
+        },
+    )
+    memory.create_audit_event(
+        event_type="focus_check",
+        title="Check periódico do Focus Guard",
+        details=(
+            f"on_track={analysis.get('on_track', True)} | "
+            f"desvio={analysis.get('deviation_level', 'none')} | "
+            f"atrasados={progress.get('load', {}).get('overdue', 0)} | "
+            f"reagendados={len(rescheduled_actions)}"
+        ),
+        level="warning" if not analysis.get("on_track", True) else "info",
+        agent=AGENT_NAME,
+        payload={
+            "progress": progress,
+            "analysis": analysis,
+            "rescheduled_actions": rescheduled_actions,
+        },
+    )
 
     # Exibe resumo
     load = progress.get("load", {})
@@ -181,7 +249,10 @@ def _run_focus_check() -> None:
     active = progress.get("active_focus_session")
     if active:
         started = active.get("started_at", "")
-        notifier.info(f"Sessão ativa: '{active.get('task_title')}' desde {started[:16]}", AGENT_NAME)
+        notifier.info(
+            f"Sessão ativa: '{active.get('task_title')}' desde {started[:16]}",
+            AGENT_NAME,
+        )
 
     # Mensagem de análise
     deviation = analysis.get("deviation_level", "none")
@@ -207,7 +278,15 @@ def _run_focus_check() -> None:
         full_msg = f"{message}"
         if recommendation:
             full_msg += f" | Recomendação: {recommendation}"
-        memory.create_alert(alert_type, full_msg)
+        alert_id = memory.create_alert(alert_type, full_msg)
+        memory.create_audit_event(
+            event_type="alert_created",
+            title=f"Alerta gerado: {alert_type}",
+            details=full_msg,
+            level="warning" if deviation != "severe" else "error",
+            agent=AGENT_NAME,
+            related_id=str(alert_id),
+        )
 
     # Blocos atrasados
     overdue = progress.get("overdue_blocks", [])
@@ -215,7 +294,17 @@ def _run_focus_check() -> None:
         notifier.warning("Blocos atrasados:", AGENT_NAME)
         for b in overdue:
             notifier.warning(
-                f"  • {b.get('time_slot', '?')} — {b.get('task_title', '?')}", AGENT_NAME
+                f"  • {b.get('time_slot', '?')} — {b.get('task_title', '?')}",
+                AGENT_NAME,
+            )
+
+    if rescheduled_actions:
+        notifier.warning("Reagendamentos automáticos:", AGENT_NAME)
+        for action in rescheduled_actions:
+            notifier.warning(
+                f"  • bloco {action.get('original_block_id')} → "
+                f"{action.get('new_block_date')} {action.get('new_time_slot')}",
+                AGENT_NAME,
             )
 
     notifier.separator()
@@ -248,7 +337,9 @@ def _background_loop() -> None:
     try:
         _run_focus_check()
     except Exception as e:
-        notifier.warning(f"Check inicial ignorado (Redis indisponível?): {e}", AGENT_NAME)
+        notifier.warning(
+            f"Check inicial ignorado (Redis indisponível?): {e}", AGENT_NAME
+        )
 
     while not _stop_event.is_set():
         try:
@@ -263,6 +354,7 @@ def _background_loop() -> None:
 # ---------------------------------------------------------------------------
 # API pública — start/stop da thread de background
 # ---------------------------------------------------------------------------
+
 
 def start_guard() -> None:
     """Inicia o Focus Guard em background thread (daemon)."""
@@ -309,6 +401,7 @@ def force_check() -> dict:
 # Gestão de sessões de foco (Pomodoro-style)
 # ---------------------------------------------------------------------------
 
+
 def start_focus_session(task_id: int, task_title: str, minutes: int = 25) -> dict:
     """Inicia uma sessão de foco rastreada."""
     # Encerra sessão anterior se existir
@@ -316,7 +409,8 @@ def start_focus_session(task_id: int, task_title: str, minutes: int = 25) -> dic
     if active:
         memory.end_focus_session(active["id"], status="abandoned")
         notifier.warning(
-            f"Sessão anterior '{active['task_title']}' encerrada (abandonada).", AGENT_NAME
+            f"Sessão anterior '{active['task_title']}' encerrada (abandonada).",
+            AGENT_NAME,
         )
 
     session_id = memory.start_focus_session(task_id, task_title, minutes)
@@ -325,7 +419,11 @@ def start_focus_session(task_id: int, task_title: str, minutes: int = 25) -> dic
     )
     memory.set_state("current_focus_task", {"task_id": task_id, "title": task_title})
 
-    return {"session_id": session_id, "task_title": task_title, "planned_minutes": minutes}
+    return {
+        "session_id": session_id,
+        "task_title": task_title,
+        "planned_minutes": minutes,
+    }
 
 
 def end_focus_session(status: str = "completed", notes: str = "") -> dict:
@@ -342,12 +440,17 @@ def end_focus_session(status: str = "completed", notes: str = "") -> dict:
     notifier.success(
         f"{emoji} Sessão encerrada: '{active['task_title']}' ({status})", AGENT_NAME
     )
-    return {"session_id": active["id"], "status": status, "task_title": active["task_title"]}
+    return {
+        "session_id": active["id"],
+        "status": status,
+        "task_title": active["task_title"],
+    }
 
 
 # ---------------------------------------------------------------------------
 # Handoff entry point — chamado pelo Orchestrator
 # ---------------------------------------------------------------------------
+
 
 def handle_handoff(payload: dict) -> dict:
     """

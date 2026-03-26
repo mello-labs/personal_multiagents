@@ -1,336 +1,827 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multiagentes</title>
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:    #000000;
-      --c1:    #111111;
-      --c2:    #1c1c1e;
-      --c3:    #2c2c2e;
-      --sep:   rgba(255,255,255,0.07);
-      --text:  #ffffff;
-      --t2:    rgba(255,255,255,0.55);
-      --t3:    rgba(255,255,255,0.25);
-      --blue:  #0a84ff;
-      --green: #30d158;
-      --red:   #ff453a;
-      --yell:  #ffd60a;
-      --cyan:  #5ac8fa;
-      --r:     18px;
-      --rs:    12px;
-      --gap:   10px;
-      --font:  -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-      --mono:  'SF Mono', 'Fira Code', ui-monospace, monospace;
-    }
-
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
-
-    /* ── Top bar ── */
-    .topbar {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 14px 8px;
-      border-bottom: 1px solid var(--sep);
-      position: sticky; top: 0; z-index: 10;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-    }
-    .tb-logo { font-size: 13px; font-weight: 700; flex: 1; letter-spacing: -0.3px; }
-    .tb-logo em { font-style: normal; color: var(--t2); font-size: 10px; font-weight: 400; margin-left: 5px; }
-    .tb-pill {
-      display: flex; align-items: center; gap: 4px;
-      background: var(--c2); border-radius: 20px;
-      padding: 3px 8px; font-size: 10px; color: var(--t2); font-weight: 500;
-    }
-    .dot { width: 6px; height: 6px; border-radius: 50%; }
-    .dot-green { background: var(--green); box-shadow: 0 0 5px var(--green); }
-    .dot-red   { background: var(--red); }
-    .tb-clock  { font-size: 11px; font-family: var(--mono); color: var(--t3); }
-    .tb-btn {
-      background: var(--c2); border: none; color: var(--t2);
-      border-radius: 20px; padding: 4px 10px; font-size: 11px;
-      cursor: pointer; font-family: var(--font); font-weight: 500;
-      display: flex; align-items: center; gap: 5px; transition: background .15s;
-    }
-    .tb-btn:hover { background: var(--c3); color: var(--text); }
-
-    /* ── Bento ── */
-    .bento {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--gap);
-      padding: var(--gap);
-      height: calc(100vh - 49px);
-      overflow: hidden;
-    }
-
-    /* ── Tile ── */
-    .tile {
-      background: var(--c1); border: 1px solid var(--sep);
-      border-radius: var(--r); overflow: hidden;
-      display: flex; flex-direction: column; min-height: 0;
-    }
-    .tile-hd {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 12px 6px; flex-shrink: 0;
-    }
-    .tile-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--t2); }
-    .tile-ico { font-size: 14px; }
-    .tile-act {
-      background: none; border: none; color: var(--t3); cursor: pointer;
-      font-size: 11px; padding: 2px 6px; border-radius: 6px; font-family: var(--font);
-    }
-    .tile-act:hover { background: var(--c3); color: var(--t2); }
-
-    /* ── Stat tiles ── */
-    .stat { padding: 12px 14px 14px; }
-    .stat-n { font-size: 40px; font-weight: 700; font-family: var(--mono); line-height: 1; }
-    .stat-s { font-size: 10px; color: var(--t3); margin-top: 3px; }
-
-    /* ── Chat ── */
-    .chat-msgs {
-      flex: 1; overflow-y: auto; padding: 10px;
-      display: flex; flex-direction: column; gap: 8px; min-height: 0;
-    }
-    .msg { display: flex; gap: 6px; align-items: flex-end; }
-    .msg.u { flex-direction: row-reverse; }
-    .av {
-      width: 22px; height: 22px; border-radius: 50%; background: var(--c3);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; flex-shrink: 0;
-    }
-    .u .av { background: var(--blue); }
-    .bub {
-      max-width: 80%; padding: 6px 11px; border-radius: 15px; font-size: 12px; line-height: 1.45;
-    }
-    .msg:not(.u) .bub { background: var(--c2); border-bottom-left-radius: 4px; }
-    .u .bub { background: var(--blue); border-bottom-right-radius: 4px; }
-    .chat-foot {
-      display: flex; gap: 6px; padding: 8px;
-      border-top: 1px solid var(--sep); flex-shrink: 0;
-    }
-    .ci {
-      flex: 1; background: var(--c2); border: 1px solid var(--sep);
-      color: var(--text); padding: 6px 12px; border-radius: 20px;
-      font-size: 12px; outline: none; font-family: var(--font);
-    }
-    .ci:focus { border-color: var(--blue); }
-    .cs {
-      background: var(--blue); border: none; color: #fff;
-      width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 13px;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .cs:hover { filter: brightness(1.1); }
-
-    /* ── Agenda ── */
-    .ab {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 12px; border-bottom: 1px solid var(--sep); font-size: 11px;
-    }
-    .ab:last-child { border-bottom: none; }
-    .ab.done .an { text-decoration: line-through; color: var(--t3); }
-    .at { font-family: var(--mono); font-size: 10px; color: var(--cyan); min-width: 88px; flex-shrink: 0; }
-    .an { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .abtn {
-      background: none; border: 1px solid var(--sep); color: var(--t3);
-      border-radius: 50%; width: 18px; height: 18px; cursor: pointer;
-      font-size: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .abtn:hover { border-color: var(--green); color: var(--green); }
-
-    /* ── Tasks ── */
-    .add-row {
-      display: flex; gap: 5px; padding: 8px;
-      border-bottom: 1px solid var(--sep); flex-shrink: 0;
-    }
-    .ai {
-      flex: 1; background: var(--c2); border: 1px solid var(--sep);
-      color: var(--text); padding: 5px 10px; border-radius: var(--rs);
-      font-size: 11px; outline: none; font-family: var(--font);
-    }
-    .ai:focus { border-color: var(--blue); }
-    .ap {
-      background: var(--c2); border: 1px solid var(--sep); color: var(--t2);
-      padding: 5px 4px; border-radius: var(--rs); font-size: 10px;
-      outline: none; font-family: var(--font); cursor: pointer; width: 60px;
-    }
-    .a+ {
-      background: var(--blue); border: none; color: #fff;
-      padding: 5px 10px; border-radius: var(--rs); cursor: pointer;
-      font-size: 12px; font-weight: 700; font-family: var(--font);
-    }
-    .tr {
-      display: flex; align-items: center; gap: 7px;
-      padding: 5px 12px; border-bottom: 1px solid var(--sep); font-size: 11px;
-    }
-    .tr:last-child { border-bottom: none; }
-    .tr.done .tn { text-decoration: line-through; color: var(--t3); }
-    .tn { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pri { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-    .ph { background: var(--red); }
-    .pm { background: var(--yell); }
-    .pl { background: var(--t3); }
-    .tc {
-      background: none; border: 1px solid var(--sep); color: var(--t3);
-      border-radius: 50%; width: 16px; height: 16px; cursor: pointer;
-      font-size: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .tc:hover { border-color: var(--green); color: var(--green); }
-
-    /* ── Grid helpers ── */
-    .gc-1   { grid-column: 1; }
-    .gc-2   { grid-column: 2; }
-    .gc-3   { grid-column: 3; }
-    .gc-4   { grid-column: 4; }
-    .gc-1-3 { grid-column: 1 / 3; }
-    .gc-3-5 { grid-column: 3 / 5; }
-    .gr-1   { grid-row: 1; }
-    .gr-2-4 { grid-row: 2 / 4; }
-    .tile-col   { overflow: hidden; display: flex; flex-direction: column; }
-    .tile-scroll { flex: 1; overflow-y: auto; }
-
-    /* ── Stat color helpers ── */
-    .stat-blue  { color: var(--blue); }
-    .stat-green { color: var(--green); }
-    .stat-red   { color: var(--red); }
-    .stat-dim   { color: var(--t3); }
-    .stat-label { font-size: 22px; padding-top: 6px; }
-    .stat-total { font-size: 18px; color: var(--t3); }
-    .c-green    { color: var(--green); }
-    .c-red      { color: var(--red); }
-
-    /* ── Add task button ── */
-    .btn-add {
-      background: var(--blue); border: none; color: #fff;
-      padding: 5px 10px; border-radius: var(--rs); cursor: pointer;
-      font-size: 12px; font-weight: 700; font-family: var(--font);
-    }
-    .btn-add:hover { filter: brightness(1.15); }
-
-    /* ── Sync toast ── */
-    .sync-toast {
-      align-self: end; pointer-events: none;
-      padding: 4px 10px; margin: 0 2px 4px;
-      background: rgba(48,209,88,.1); border-radius: 8px;
-      font-size: 10px; color: var(--green);
-    }
-
-    /* ── Chat loading indicator ── */
-    .chat-spinner {
-      font-size: 10px; color: var(--t3); letter-spacing: 2px;
-      animation: pulse 1s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%,100% { opacity:.2; } 50% { opacity:1; } }
-
-    /* ── Chat flutuante ── */
-    .chat-fab {
-      position: fixed; bottom: 22px; right: 22px; z-index: 200;
-      width: 46px; height: 46px; border-radius: 50%;
-      background: var(--blue); border: none; color: #fff;
-      font-size: 18px; cursor: pointer; line-height: 1;
-      box-shadow: 0 4px 16px rgba(10,132,255,.45);
-      transition: transform .15s, box-shadow .15s;
-    }
-    .chat-fab:hover  { transform: scale(1.08); box-shadow: 0 6px 20px rgba(10,132,255,.6); }
-    .chat-fab.active { background: var(--c3); box-shadow: none; font-size: 14px; }
-
-    .chat-panel {
-      position: fixed; bottom: 78px; right: 22px; z-index: 199;
-      width: 340px; height: 460px;
-      background: var(--c1); border: 1px solid var(--sep);
-      border-radius: var(--r); display: flex; flex-direction: column;
-      box-shadow: 0 8px 40px rgba(0,0,0,.6);
-      transform: scale(.96) translateY(10px); opacity: 0; pointer-events: none;
-      transition: transform .2s cubic-bezier(.34,1.26,.64,1), opacity .18s;
-    }
-    .chat-panel.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
-
-    .chat-panel-hd {
-      display: flex; align-items: center; gap: 6px;
-      padding: 10px 12px 8px; flex-shrink: 0;
-      border-bottom: 1px solid var(--sep);
-    }
-    .chat-panel-hd .tile-lbl { flex: 1; }
-    .chat-close {
-      background: none; border: none; color: var(--t3); cursor: pointer;
-      font-size: 12px; padding: 2px 6px; border-radius: 6px; line-height: 1;
-    }
-    .chat-close:hover { background: var(--c3); color: var(--text); }
-
-    /* ── Error toast (global HTMX errors) ── */
-    #err-toast {
-      position: fixed; bottom: 16px; right: 16px; z-index: 999;
-      background: rgba(255,69,58,.92); color: #fff;
-      padding: 8px 14px; border-radius: 10px; font-size: 12px;
-      opacity: 0; transform: translateY(6px);
-      transition: opacity .2s, transform .2s; pointer-events: none;
-    }
-    #err-toast.show { opacity: 1; transform: translateY(0); }
-
-    /* ── Misc ── */
-    .empty { padding: 18px; text-align: center; color: var(--t3); font-size: 11px; }
-    ::-webkit-scrollbar { width: 3px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--c3); border-radius: 2px; }
-    .spin { animation: sp .6s linear infinite; }
-    @keyframes sp { to { transform: rotate(360deg); } }
-    .htmx-indicator { opacity: 0; transition: opacity .2s; }
-    .htmx-request .htmx-indicator { opacity: 1; }
-    .htmx-request .sync-lbl { display: none; }
-    input:disabled, button:disabled { opacity: .5; cursor: not-allowed; }
-  </style>
-</head>
-<body>
-
-  <header class="topbar">
-    <div class="tb-logo">⟁ Multiagentes <em>Fase 2</em></div>
-    <div class="tb-clock" id="clk"></div>
-    <div class="tb-pill"><span class="dot dot-green"></span> Guard</div>
-    <button class="tb-btn"
-            hx-post="/sync"
-            hx-target="#stats-row"
-            hx-swap="outerHTML"
-            hx-indicator="#sync-sp"
-            hx-disabled-elt="this">
-      <span id="sync-sp" class="htmx-indicator spin">↻</span>
-      <span class="sync-lbl">↻ Sync</span>
-    </button>
-  </header>
-
-  <div class="bento">{% block content %}{% endblock %}</div>
-
-  {# Toast global para erros HTMX #}
-  <div id="err-toast" role="alert" aria-live="assertive"></div>
-
-  <script>
-    function clk(){document.getElementById('clk').textContent=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
-    clk(); setInterval(clk,10000);
-
-    /* Handler global de erros HTMX — mostra toast vermelho */
-    (function() {
-      var _toastTimer;
-      function showErr(msg) {
-        var t = document.getElementById('err-toast');
-        if (!t) return;
-        t.textContent = msg;
-        t.classList.add('show');
-        clearTimeout(_toastTimer);
-        _toastTimer = setTimeout(function() { t.classList.remove('show'); }, 4000);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multiagentes</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
-      document.body.addEventListener('htmx:responseError', function(e) {
-        var status = e.detail.xhr ? e.detail.xhr.status : '?';
-        showErr('⚠ Erro ' + status + ' — tente novamente');
-      });
-      document.body.addEventListener('htmx:sendError', function() {
-        showErr('⚠ Sem conexão com o servidor');
-      });
-    })();
-  </script>
-</body>
+
+      :root {
+        --bg: #000000;
+        --c1: #111111;
+        --c2: #1c1c1e;
+        --c3: #2c2c2e;
+        --sep: rgba(255, 255, 255, 0.07);
+        --text: #ffffff;
+        --t2: rgba(255, 255, 255, 0.55);
+        --t3: rgba(255, 255, 255, 0.25);
+        --blue: #0a84ff;
+        --green: #30d158;
+        --red: #ff453a;
+        --yell: #ffd60a;
+        --cyan: #5ac8fa;
+        --r: 18px;
+        --rs: 12px;
+        --gap: 10px;
+        --font:
+          -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue",
+          sans-serif;
+        --mono: "SF Mono", "Fira Code", ui-monospace, monospace;
+      }
+
+      html,
+      body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+      }
+
+      /* ── Top bar ── */
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px 8px;
+        border-bottom: 1px solid var(--sep);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      .tb-logo {
+        font-size: 13px;
+        font-weight: 700;
+        flex: 1;
+        letter-spacing: -0.3px;
+      }
+      .tb-logo em {
+        font-style: normal;
+        color: var(--t2);
+        font-size: 10px;
+        font-weight: 400;
+        margin-left: 5px;
+      }
+      .tb-pill {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--c2);
+        border-radius: 20px;
+        padding: 3px 8px;
+        font-size: 10px;
+        color: var(--t2);
+        font-weight: 500;
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+      .dot-green {
+        background: var(--green);
+        box-shadow: 0 0 5px var(--green);
+      }
+      .dot-red {
+        background: var(--red);
+      }
+      .tb-clock {
+        font-size: 11px;
+        font-family: var(--mono);
+        color: var(--t3);
+      }
+      .tb-btn {
+        background: var(--c2);
+        border: none;
+        color: var(--t2);
+        border-radius: 20px;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        font-family: var(--font);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: background 0.15s;
+      }
+      .tb-btn:hover {
+        background: var(--c3);
+        color: var(--text);
+      }
+
+      /* ── Bento ── */
+      .bento {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--gap);
+        padding: var(--gap);
+        height: calc(100vh - 49px);
+        overflow: hidden;
+      }
+      .audit-page .bento {
+        height: auto;
+        min-height: calc(100vh - 49px);
+        overflow: auto;
+        grid-auto-rows: minmax(220px, auto);
+        align-content: start;
+      }
+
+      /* ── Tile ── */
+      .tile {
+        background: var(--c1);
+        border: 1px solid var(--sep);
+        border-radius: var(--r);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .tile-hd {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px 6px;
+        flex-shrink: 0;
+      }
+      .tile-lbl {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: var(--t2);
+      }
+      .tile-ico {
+        font-size: 14px;
+      }
+      .tile-act {
+        background: none;
+        border: none;
+        color: var(--t3);
+        cursor: pointer;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-family: var(--font);
+      }
+      .tile-act:hover {
+        background: var(--c3);
+        color: var(--t2);
+      }
+
+      /* ── Stat tiles ── */
+      .stat {
+        padding: 12px 14px 14px;
+      }
+      .stat-n {
+        font-size: 40px;
+        font-weight: 700;
+        font-family: var(--mono);
+        line-height: 1;
+      }
+      .stat-s {
+        font-size: 10px;
+        color: var(--t3);
+        margin-top: 3px;
+      }
+
+      /* ── Chat ── */
+      .chat-msgs {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 0;
+      }
+      .msg {
+        display: flex;
+        gap: 6px;
+        align-items: flex-end;
+      }
+      .msg.u {
+        flex-direction: row-reverse;
+      }
+      .av {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--c3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        flex-shrink: 0;
+      }
+      .u .av {
+        background: var(--blue);
+      }
+      .bub {
+        max-width: 80%;
+        padding: 6px 11px;
+        border-radius: 15px;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .msg:not(.u) .bub {
+        background: var(--c2);
+        border-bottom-left-radius: 4px;
+      }
+      .u .bub {
+        background: var(--blue);
+        border-bottom-right-radius: 4px;
+      }
+      .chat-foot {
+        display: flex;
+        gap: 6px;
+        padding: 8px;
+        border-top: 1px solid var(--sep);
+        flex-shrink: 0;
+      }
+      .ci {
+        flex: 1;
+        background: var(--c2);
+        border: 1px solid var(--sep);
+        color: var(--text);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        outline: none;
+        font-family: var(--font);
+      }
+      .ci:focus {
+        border-color: var(--blue);
+      }
+      .cs {
+        background: var(--blue);
+        border: none;
+        color: #fff;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .cs:hover {
+        filter: brightness(1.1);
+      }
+
+      /* ── Agenda ── */
+      .ab {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-bottom: 1px solid var(--sep);
+        font-size: 11px;
+      }
+      .ab:last-child {
+        border-bottom: none;
+      }
+      .ab.done .an {
+        text-decoration: line-through;
+        color: var(--t3);
+      }
+      .at {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--cyan);
+        min-width: 88px;
+        flex-shrink: 0;
+      }
+      .an {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .abtn {
+        background: none;
+        border: 1px solid var(--sep);
+        color: var(--t3);
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        font-size: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .abtn:hover {
+        border-color: var(--green);
+        color: var(--green);
+      }
+
+      /* ── Tasks ── */
+      .add-row {
+        display: flex;
+        gap: 5px;
+        padding: 8px;
+        border-bottom: 1px solid var(--sep);
+        flex-shrink: 0;
+      }
+      .ai {
+        flex: 1;
+        background: var(--c2);
+        border: 1px solid var(--sep);
+        color: var(--text);
+        padding: 5px 10px;
+        border-radius: var(--rs);
+        font-size: 11px;
+        outline: none;
+        font-family: var(--font);
+      }
+      .ai:focus {
+        border-color: var(--blue);
+      }
+      .ap {
+        background: var(--c2);
+        border: 1px solid var(--sep);
+        color: var(--t2);
+        padding: 5px 4px;
+        border-radius: var(--rs);
+        font-size: 10px;
+        outline: none;
+        font-family: var(--font);
+        cursor: pointer;
+        width: 60px;
+      }
+      .a + {
+        background: var(--blue);
+        border: none;
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: var(--rs);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        font-family: var(--font);
+      }
+      .tr {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 12px;
+        border-bottom: 1px solid var(--sep);
+        font-size: 11px;
+      }
+      .tr:last-child {
+        border-bottom: none;
+      }
+      .tr.done .tn {
+        text-decoration: line-through;
+        color: var(--t3);
+      }
+      .tn {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .pri {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .ph {
+        background: var(--red);
+      }
+      .pm {
+        background: var(--yell);
+      }
+      .pl {
+        background: var(--t3);
+      }
+      .tc {
+        background: none;
+        border: 1px solid var(--sep);
+        color: var(--t3);
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        font-size: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .tc:hover {
+        border-color: var(--green);
+        color: var(--green);
+      }
+
+      /* ── Grid helpers ── */
+      .gc-1 {
+        grid-column: 1;
+      }
+      .gc-2 {
+        grid-column: 2;
+      }
+      .gc-3 {
+        grid-column: 3;
+      }
+      .gc-4 {
+        grid-column: 4;
+      }
+      .gc-1-3 {
+        grid-column: 1 / 3;
+      }
+      .gc-1-5 {
+        grid-column: 1 / 5;
+      }
+      .gc-3-5 {
+        grid-column: 3 / 5;
+      }
+      .gr-1 {
+        grid-row: 1;
+      }
+      .gr-2-4 {
+        grid-row: 2 / 4;
+      }
+      .gr-4-6 {
+        grid-row: 4 / 6;
+      }
+      .tile-col {
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .tile-scroll {
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      /* ── Stat color helpers ── */
+      .stat-blue {
+        color: var(--blue);
+      }
+      .stat-green {
+        color: var(--green);
+      }
+      .stat-red {
+        color: var(--red);
+      }
+      .stat-dim {
+        color: var(--t3);
+      }
+      .stat-label {
+        font-size: 22px;
+        padding-top: 6px;
+      }
+      .stat-total {
+        font-size: 18px;
+        color: var(--t3);
+      }
+      .c-green {
+        color: var(--green);
+      }
+      .c-red {
+        color: var(--red);
+      }
+
+      /* ── Add task button ── */
+      .btn-add {
+        background: var(--blue);
+        border: none;
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: var(--rs);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        font-family: var(--font);
+      }
+      .btn-add:hover {
+        filter: brightness(1.15);
+      }
+
+      /* ── Sync toast ── */
+      .sync-toast {
+        align-self: end;
+        pointer-events: none;
+        padding: 4px 10px;
+        margin: 0 2px 4px;
+        background: rgba(48, 209, 88, 0.1);
+        border-radius: 8px;
+        font-size: 10px;
+        color: var(--green);
+      }
+
+      /* ── Chat loading indicator ── */
+      .chat-spinner {
+        font-size: 10px;
+        color: var(--t3);
+        letter-spacing: 2px;
+        animation: pulse 1s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.2;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* ── Chat flutuante ── */
+      .chat-fab {
+        position: fixed;
+        bottom: 22px;
+        right: 22px;
+        z-index: 200;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: var(--blue);
+        border: none;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        line-height: 1;
+        box-shadow: 0 4px 16px rgba(10, 132, 255, 0.45);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      .chat-fab:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 20px rgba(10, 132, 255, 0.6);
+      }
+      .chat-fab.active {
+        background: var(--c3);
+        box-shadow: none;
+        font-size: 14px;
+      }
+
+      .chat-panel {
+        position: fixed;
+        bottom: 78px;
+        right: 22px;
+        z-index: 199;
+        width: 340px;
+        height: 460px;
+        background: var(--c1);
+        border: 1px solid var(--sep);
+        border-radius: var(--r);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+        transform: scale(0.96) translateY(10px);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          transform 0.2s cubic-bezier(0.34, 1.26, 0.64, 1),
+          opacity 0.18s;
+      }
+      .chat-panel.open {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      .chat-panel-hd {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 12px 8px;
+        flex-shrink: 0;
+        border-bottom: 1px solid var(--sep);
+      }
+      .chat-panel-hd .tile-lbl {
+        flex: 1;
+      }
+      .chat-close {
+        background: none;
+        border: none;
+        color: var(--t3);
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 6px;
+        line-height: 1;
+      }
+      .chat-close:hover {
+        background: var(--c3);
+        color: var(--text);
+      }
+
+      /* ── Error toast (global HTMX errors) ── */
+      #err-toast {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        z-index: 999;
+        background: rgba(255, 69, 58, 0.92);
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 12px;
+        opacity: 0;
+        transform: translateY(6px);
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
+        pointer-events: none;
+      }
+      #err-toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* ── Misc ── */
+      .empty {
+        padding: 18px;
+        text-align: center;
+        color: var(--t3);
+        font-size: 11px;
+      }
+      .list {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .list-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--sep);
+        font-size: 11px;
+      }
+      .list-item:last-child {
+        border-bottom: none;
+      }
+      .list-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: space-between;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--sep);
+        border-radius: 999px;
+        padding: 2px 7px;
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--t2);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .badge.warn {
+        color: var(--yell);
+        border-color: rgba(255, 214, 10, 0.25);
+      }
+      .badge.err {
+        color: var(--red);
+        border-color: rgba(255, 69, 58, 0.25);
+      }
+      .badge.ok {
+        color: var(--green);
+        border-color: rgba(48, 209, 88, 0.25);
+      }
+      .meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 10px;
+        color: var(--t3);
+        font-family: var(--mono);
+      }
+      .subtle {
+        color: var(--t2);
+      }
+      .log-pane {
+        flex: 1;
+        overflow: auto;
+        padding: 12px;
+        font-family: var(--mono);
+        font-size: 10px;
+        line-height: 1.55;
+        color: var(--t2);
+        background: #090909;
+        white-space: pre-wrap;
+      }
+      .mono {
+        font-family: var(--mono);
+      }
+      ::-webkit-scrollbar {
+        width: 3px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--c3);
+        border-radius: 2px;
+      }
+      .spin {
+        animation: sp 0.6s linear infinite;
+      }
+      @keyframes sp {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .htmx-indicator {
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .htmx-request .htmx-indicator {
+        opacity: 1;
+      }
+      .htmx-request .sync-lbl {
+        display: none;
+      }
+      input:disabled,
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body class="{{ page_name|default('dashboard') }}-page">
+    <header class="topbar">
+      <div class="tb-logo">⟁ Multiagentes <em>Fase 2</em></div>
+      <div class="tb-clock" id="clk"></div>
+      <div class="tb-pill"><span class="dot dot-green"></span> Guard</div>
+      <button class="tb-btn" onclick="window.location.href = '/'">
+        ⌂ Dashboard
+      </button>
+      <button class="tb-btn" onclick="window.location.href = '/audit'">
+        ▣ Audit
+      </button>
+      <button
+        class="tb-btn"
+        hx-post="/sync"
+        hx-target="#stats-row"
+        hx-swap="outerHTML"
+        hx-indicator="#sync-sp"
+        hx-disabled-elt="this"
+      >
+        <span id="sync-sp" class="htmx-indicator spin">↻</span>
+        <span class="sync-lbl">↻ Sync</span>
+      </button>
+    </header>
+
+    <div class="bento">{% block content %}{% endblock %}</div>
+
+    {# Toast global para erros HTMX #}
+    <div id="err-toast" role="alert" aria-live="assertive"></div>
+
+    <script>
+      function clk() {
+        document.getElementById("clk").textContent =
+          new Date().toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+      }
+      clk();
+      setInterval(clk, 10000);
+
+      /* Handler global de erros HTMX — mostra toast vermelho */
+      (function () {
+        var _toastTimer;
+        function showErr(msg) {
+          var t = document.getElementById("err-toast");
+          if (!t) return;
+          t.textContent = msg;
+          t.classList.add("show");
+          clearTimeout(_toastTimer);
+          _toastTimer = setTimeout(function () {
+            t.classList.remove("show");
+          }, 4000);
+        }
+        document.body.addEventListener("htmx:responseError", function (e) {
+          var status = e.detail.xhr ? e.detail.xhr.status : "?";
+          showErr("⚠ Erro " + status + " — tente novamente");
+        });
+        document.body.addEventListener("htmx:sendError", function () {
+          showErr("⚠ Sem conexão com o servidor");
+        });
+      })();
+    </script>
+  </body>
 </html>

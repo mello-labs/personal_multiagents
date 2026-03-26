@@ -2,12 +2,13 @@
 test_memory.py — Testes das operações CRUD do core/memory.py.
 Usa banco SQLite em arquivo temporário (sem afetar memory.db de produção).
 """
-from datetime import date
 
+from datetime import date
 
 # =============================================================================
 # TASKS
 # =============================================================================
+
 
 class TestTasks:
     def test_create_task_retorna_id(self, mem):
@@ -16,7 +17,9 @@ class TestTasks:
         assert task_id > 0
 
     def test_get_task_retorna_dados_corretos(self, mem):
-        task_id = mem.create_task("Reunião semanal", priority="Média", scheduled_time="09:00")
+        task_id = mem.create_task(
+            "Reunião semanal", priority="Média", scheduled_time="09:00"
+        )
         task = mem.get_task(task_id)
 
         assert task is not None
@@ -83,6 +86,7 @@ class TestTasks:
 # AGENDA BLOCKS
 # =============================================================================
 
+
 class TestAgendaBlocks:
     def test_create_agenda_block(self, mem):
         block_id = mem.create_agenda_block(
@@ -119,10 +123,21 @@ class TestAgendaBlocks:
         blocos = mem.get_today_agenda()
         assert blocos[0]["completed"] == 0
 
+    def test_update_block_e_get_block(self, mem):
+        today = date.today().isoformat()
+        block_id = mem.create_agenda_block(today, "10:00-11:00", "Replanejar sprint")
+
+        mem.update_block(block_id, rescheduled=True, rescheduled_to_block_id=99)
+        bloco = mem.get_block(block_id)
+
+        assert bloco["rescheduled"] == 1
+        assert bloco["rescheduled_to_block_id"] == 99
+
 
 # =============================================================================
 # FOCUS SESSIONS
 # =============================================================================
+
 
 class TestFocusSessions:
     def test_start_focus_session(self, mem):
@@ -155,6 +170,7 @@ class TestFocusSessions:
 # SYSTEM STATE
 # =============================================================================
 
+
 class TestSystemState:
     def test_set_e_get_state(self, mem):
         mem.set_state("chave_teste", {"valor": 42, "ativo": True})
@@ -177,6 +193,7 @@ class TestSystemState:
 # ALERTS
 # =============================================================================
 
+
 class TestAlerts:
     def test_create_e_get_pending_alerts(self, mem):
         mem.create_alert("deviation_moderate", "Você atrasou 2 blocos.")
@@ -193,10 +210,40 @@ class TestAlerts:
         pendentes = mem.get_pending_alerts()
         assert len(pendentes) == 0
 
+    def test_list_alerts_retorna_historico_com_ack(self, mem):
+        alert_id = mem.create_alert("focus_check", "Check-in automático.")
+        mem.acknowledge_alert(alert_id)
+
+        alertas = mem.list_alerts()
+        assert len(alertas) == 1
+        assert alertas[0]["acknowledged"] == 1
+
+
+# =============================================================================
+# AUDIT EVENTS
+# =============================================================================
+
+
+class TestAuditEvents:
+    def test_create_e_list_audit_events(self, mem):
+        mem.create_audit_event(
+            event_type="auto_reschedule",
+            title="Bloco reagendado",
+            details="09:00-10:00 → 11:00-12:00",
+            level="warning",
+            agent="focus_guard",
+        )
+
+        eventos = mem.list_audit_events()
+        assert len(eventos) == 1
+        assert eventos[0]["event_type"] == "auto_reschedule"
+        assert eventos[0]["agent"] == "focus_guard"
+
 
 # =============================================================================
 # AGENT HANDOFFS
 # =============================================================================
+
 
 class TestHandoffs:
     def test_log_handoff(self, mem):
@@ -212,3 +259,8 @@ class TestHandoffs:
         handoff_id = mem.log_handoff("orchestrator", "scheduler", "get_schedule")
         mem.update_handoff_result(handoff_id, {"blocks": []}, status="success")
         # Sem exceção = sucesso
+
+    def test_list_recent_handoffs(self, mem):
+        mem.log_handoff("orchestrator", "scheduler", "get_schedule")
+        handoffs = mem.list_recent_handoffs()
+        assert len(handoffs) == 1
