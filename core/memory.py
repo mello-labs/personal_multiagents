@@ -30,6 +30,8 @@
 #   alerts:next_id             COUNTER
 
 import json
+import subprocess
+import time
 import threading
 from datetime import datetime, date
 from typing import Optional, Any
@@ -38,19 +40,50 @@ import redis as redis_lib
 
 from config import REDIS_URL
 
-
 # ---------------------------------------------------------------------------
-# Conexão singleton (lazy)
+# Conexão singleton (lazy) com auto-start de redis-server local
 # ---------------------------------------------------------------------------
 
 _redis_client: Optional[redis_lib.Redis] = None
 _lock = threading.Lock()
+_IS_LOCAL = any(h in REDIS_URL for h in ("localhost", "127.0.0.1"))
+
+
+def _start_local_redis() -> None:
+    """Tenta iniciar redis-server local (brew install redis)."""
+    try:
+        subprocess.Popen(
+            ["redis-server", "--daemonize", "yes", "--loglevel", "warning"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(0.8)
+    except FileNotFoundError:
+        raise RuntimeError(
+            "Redis não encontrado. Instale com:\n"
+            "  brew install redis\n"
+            "Ou suba via Docker:\n"
+            "  make redis-up"
+        )
 
 
 def _r() -> redis_lib.Redis:
     global _redis_client
     if _redis_client is None:
-        _redis_client = redis_lib.from_url(REDIS_URL, decode_responses=True)
+        client = redis_lib.from_url(
+            REDIS_URL, decode_responses=True, socket_connect_timeout=1
+        )
+        try:
+            client.ping()
+        except (redis_lib.exceptions.ConnectionError, redis_lib.exceptions.TimeoutError):
+            if _IS_LOCAL:
+                print("[Memory] Redis offline — tentando iniciar redis-server local...")
+                _start_local_redis()
+                client = redis_lib.from_url(REDIS_URL, decode_responses=True)
+                client.ping()  # levanta exceção se ainda falhar
+            else:
+                raise
+        _redis_client = client
     return _redis_client
 
 
