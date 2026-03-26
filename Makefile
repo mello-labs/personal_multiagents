@@ -77,16 +77,8 @@ dev-full: redis-up ## Sobe Redis local + FastAPI com hot-reload
 	@$(MAKE) dev
 
 .PHONY: guard
-guard: ## Inicia Focus Guard no terminal
+guard: redis-ensure ## Inicia Focus Guard no terminal
 	@$(PY) main.py
-
-.PHONY: chat
-chat: ## Modo chat interativo com o Orchestrator
-	@$(PY) main.py chat
-
-.PHONY: status
-status: ## Exibe status atual do sistema
-	@$(PY) main.py status
 
 # =============================================================================
 # REDIS LOCAL (Docker)
@@ -103,6 +95,15 @@ redis-up: ## Sobe Redis local via Docker (porta 6379)
 		> /dev/null 2>&1 || true
 	@sleep 0.5
 	@echo "$(GREEN)✓ Redis rodando em localhost:6379$(RESET)"
+
+.PHONY: redis-ensure
+redis-ensure: ## Garante que Redis está rodando (sobe se necessário)
+	@docker exec $(REDIS_CONTAINER) redis-cli PING > /dev/null 2>&1 || \
+		(docker run -d --rm \
+			--name $(REDIS_CONTAINER) \
+			-p 6379:6379 \
+			redis:7-alpine > /dev/null 2>&1 && sleep 0.8 && \
+			echo "$(GREEN)✓ Redis iniciado$(RESET)")
 
 .PHONY: redis-down
 redis-down: ## Para o Redis local Docker
@@ -137,23 +138,23 @@ redis-ping: ## Testa conexão Redis
 # =============================================================================
 
 .PHONY: sync
-sync: ## Sincronização diferencial com Notion
+sync: redis-ensure ## Sincronização diferencial com Notion
 	@$(PY) main.py sync
 
 .PHONY: agenda
-agenda: ## Exibe agenda de hoje
+agenda: redis-ensure ## Exibe agenda de hoje
 	@$(PY) main.py agenda
 
 .PHONY: tasks
-tasks: ## Lista todas as tarefas
+tasks: redis-ensure ## Lista todas as tarefas
 	@$(PY) main.py tasks
 
 .PHONY: retro
-retro: ## Gera retrospectiva semanal (local, sem push)
+retro: redis-ensure ## Gera retrospectiva semanal (local, sem push)
 	@$(PY) main.py retrospective
 
 .PHONY: retro-push
-retro-push: ## Gera retrospectiva e envia ao Notion
+retro-push: redis-ensure ## Gera retrospectiva e envia ao Notion
 	@$(PY) main.py retrospective --push
 
 .PHONY: calendar-auth
@@ -161,12 +162,20 @@ calendar-auth: ## Autentica Google Calendar (OAuth2)
 	@$(PY) main.py calendar auth
 
 .PHONY: calendar-import
-calendar-import: ## Importa eventos de hoje do Google Calendar
+calendar-import: redis-ensure ## Importa eventos de hoje do Google Calendar
 	@$(PY) main.py calendar import
 
 .PHONY: calendar-status
-calendar-status: ## Status da integração Google Calendar
+calendar-status: redis-ensure ## Status da integração Google Calendar
 	@$(PY) main.py calendar status
+
+.PHONY: chat
+chat: redis-ensure ## Modo chat interativo com o Orchestrator
+	@$(PY) main.py chat
+
+.PHONY: status
+status: redis-ensure ## Exibe status atual do sistema
+	@$(PY) main.py status
 
 # =============================================================================
 # TESTES
