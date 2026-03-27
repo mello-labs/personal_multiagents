@@ -1,0 +1,40 @@
+<svg width="1200" height="420" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="420" fill="#09131A"/>
+  <rect x="34" y="34" width="1132" height="352" rx="24" fill="url(#bg)"/>
+  <rect x="34" y="34" width="1132" height="352" rx="24" stroke="#6EE7F9" stroke-opacity="0.25"/>
+
+  <circle cx="188" cy="210" r="84" fill="#0B202A" stroke="#6EE7F9" stroke-opacity="0.5" stroke-width="2"/>
+  <circle cx="188" cy="210" r="52" fill="#102B36" stroke="#D7FF64" stroke-opacity="0.7" stroke-width="2"/>
+  <circle cx="188" cy="210" r="20" fill="#D7FF64"/>
+
+  <path d="M240 152H356" stroke="#6EE7F9" stroke-width="3" stroke-linecap="round"/>
+  <path d="M240 210H356" stroke="#6EE7F9" stroke-width="3" stroke-linecap="round"/>
+  <path d="M240 268H356" stroke="#6EE7F9" stroke-width="3" stroke-linecap="round"/>
+
+  <rect x="384" y="110" width="292" height="200" rx="18" fill="#08171F" stroke="#6EE7F9" stroke-opacity="0.35"/>
+  <text x="418" y="156" fill="#D7FF64" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="20">orchestrator()</text>
+  <text x="418" y="202" fill="#E8F4F8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="20">focus_guard()</text>
+  <text x="418" y="248" fill="#E8F4F8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="20">scheduler()</text>
+  <text x="418" y="284" fill="#9BB7C3" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="16">validate(), sync(), audit()</text>
+
+  <path d="M676 210H760" stroke="#6EE7F9" stroke-width="3" stroke-linecap="round"/>
+  <path d="M747 197L760 210L747 223" stroke="#6EE7F9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="778" y="102" width="314" height="216" rx="18" fill="#08171F" stroke="#D7FF64" stroke-opacity="0.45"/>
+  <text x="812" y="148" fill="#D7FF64" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="22">REDIS MEMORY</text>
+  <text x="812" y="192" fill="#E8F4F8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="18">agenda persistence</text>
+  <text x="812" y="224" fill="#E8F4F8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="18">notion sync</text>
+  <text x="812" y="256" fill="#E8F4F8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="18">calendar import</text>
+  <text x="812" y="288" fill="#E8F4F8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="18">audit trail</text>
+
+  <text x="86" y="86" fill="#6EE7F9" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="18" letter-spacing="2">PERSONAL SYSTEM</text>
+  <text x="84" y="346" fill="#E8F4F8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="44" font-weight="700">multiagentes</text>
+  <text x="84" y="376" fill="#9BB7C3" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="18">Autonomous operating layer for agenda, focus, sync, and memory</text>
+
+  <defs>
+    <linearGradient id="bg" x1="62" y1="48" x2="1124" y2="372" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10222D"/>
+      <stop offset="1" stop-color="#0B151C"/>
+    </linearGradient>
+  </defs>
+</svg>
