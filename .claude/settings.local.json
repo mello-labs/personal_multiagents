@@ -35,7 +35,15 @@
       "Bash(grep -v \"^$\\\\|███\\\\|═══\\\\|Agentes\\\\|Memory\")",
       "Bash(make sync:*)",
       "Bash(redis-cli keys:*)",
-      "Bash(xargs -I{} redis-cli hgetall {})"
+      "Bash(xargs -I{} redis-cli hgetall {})",
+      "Bash(find /Users/nettomello/CODIGOS/multiagentes -name *persona* -o -name *identity*)",
+      "Bash(grep -r \"persona\\\\|identity\\\\|character\\\\|role.*select\\\\|user.*select\" /Users/nettomello/CODIGOS/multiagentes --include=*.py --include=*.html)",
+      "Bash(python -c \"from agents.persona_manager import list_personas, get_persona; print\\(list_personas\\(\\)\\); print\\(''---''\\); p = get_persona\\(''taylor''\\); print\\(p[''name''], p[''icon'']\\)\")",
+      "Bash(python3 -c \"from agents.persona_manager import list_personas, get_persona; print\\(list_personas\\(\\)\\); print\\(''---''\\); p = get_persona\\(''taylor''\\); print\\(p[''name''], p[''icon'']\\)\")",
+      "Bash(python3 -c \"import agents.orchestrator; print\\(''orchestrator OK''\\)\")",
+      "Bash(source venv/bin/activate)",
+      "Bash(python -c \"import agents.orchestrator; print\\(''''orchestrator OK''''\\)\")",
+      "Bash(./venv/bin/python -c \":*)"
     ]
   }
 }
