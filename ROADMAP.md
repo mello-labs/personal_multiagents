@@ -1,4 +1,5 @@
 # Roadmap — Sistema de Multiagentes para Gestão Pessoal
+
 **Atualizado em:** 25/03/2026
 **Estado atual:** v0.1 — MVP funcional (CLI + 5 agentes + SQLite + Notion REST)
 
@@ -8,12 +9,14 @@
 
 Antes de qualquer evolução, o sistema precisa estar rodando de verdade.
 
-**1. Configurar o ambiente**
+*1. Configurar o ambiente*  
+
 - Copiar `.env.example` para `.env` e preencher `OPENAI_API_KEY`, `NOTION_TOKEN`, `NOTION_TASKS_DB_ID`, `NOTION_AGENDA_DB_ID`
 - `pip install -r requirements.txt`
 
-**2. Criar os databases no Notion com a estrutura exata**
+2.Criar os databases no Notion com a estrutura exata
 
+```text
 Database **Tarefas**:
 | Campo | Tipo |
 |---|---|
@@ -30,8 +33,10 @@ Database **Agenda Diária**:
 | Bloco horário | Rich Text |
 | Tarefa vinculada | Relation → Tarefas |
 | Concluído | Checkbox |
+```
 
-**3. Validar o fluxo completo**
+3.Validar o fluxo completo:  
+
 ```bash
 python main.py demo       # popula dados de teste
 python main.py status     # verifica se tudo está lendo o SQLite
@@ -51,6 +56,7 @@ python main.py            # entra no modo interativo e testa um comando natural
 Criar `~/Library/LaunchAgents/com.multiagentes.focusguard.plist` apontando para `python main.py` com `KeepAlive = true`. O sistema operacional reinicia automaticamente se o processo cair.
 
 **Solução — Linux (systemd):**
+
 ```ini
 [Unit]
 Description=Multiagentes Focus Guard
@@ -68,6 +74,7 @@ WantedBy=default.target
 ### 1.2 Logging estruturado
 
 Trocar o logging simples por **structlog** ou **loguru**. Isso permite:
+
 - Filtrar logs por agente
 - Exportar para JSON para análise posterior
 - Correlacionar handoffs pelo `handoff_id`
@@ -75,6 +82,7 @@ Trocar o logging simples por **structlog** ou **loguru**. Isso permite:
 ### 1.3 Testes automatizados
 
 Criar `tests/` com pytest cobrindo pelo menos:
+
 - `memory.py` — todas as operações CRUD (rodar com banco in-memory `:memory:`)
 - `scheduler.py` — detecção de conflitos e cálculo de carga
 - `validator.py` — lógica de `check_data_consistency` sem LLM
@@ -83,6 +91,7 @@ Criar `tests/` com pytest cobrindo pelo menos:
 ### 1.4 Tratamento de rate limit da Notion API
 
 A Notion API tem limite de 3 req/s. Adicionar retry com backoff exponencial em `notion_sync._request()`:
+
 ```python
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 ```
@@ -112,12 +121,14 @@ def fetch_tasks_modified_since(last_sync_iso: str) -> list[dict]:
 ### 2.2 Agente de Retrospectiva Semanal
 
 Novo agente `agents/retrospective.py` que:
+
 1. Lê todas as `focus_sessions` e `agent_handoffs` da semana
 2. Calcula métricas: taxa de conclusão, tempo médio real vs. planejado, horários mais produtivos
 3. Gera um relatório via GPT-4o com insights e sugestões para a semana seguinte
 4. Cria uma página de retrospectiva no Notion automaticamente
 
 Acionado via:
+
 ```bash
 python main.py retrospective   # ou automatizado todo domingo às 18h via systemd
 ```
@@ -126,7 +137,7 @@ python main.py retrospective   # ou automatizado todo domingo às 18h via system
 
 Em vez de só CLI, expor o Orchestrator via HTTP:
 
-```
+```text
 POST /chat          → orchestrator.process(user_input)
 GET  /status        → orchestrator.get_system_summary()
 GET  /agenda        → scheduler.get_today_schedule()
@@ -139,6 +150,7 @@ Frontend: **HTMX** + templates Jinja2 — sem build step, sem Node, abre no brow
 ### 2.4 Google Calendar como fonte de verdade do Scheduler
 
 Integrar a **Google Calendar API** para:
+
 - Importar eventos do calendário como blocos de agenda (reuniões já agendadas criam blocos automaticamente)
 - Bloquear horários ocupados antes de sugerir agenda
 - Exportar blocos criados pelo Scheduler de volta ao calendário
@@ -157,6 +169,7 @@ O Orchestrator passaria a acionar `calendar_sync` antes do `scheduler` para ter 
 ### 3.1 Migrar para o OpenAI Agents SDK oficial
 
 O SDK `openai-agents` (lançado em março de 2025) fornece primitivas nativas de:
+
 - **Handoffs declarativos** — `handoff(agent, tool_choice="required")`
 - **Guardrails** — validação de input/output por agente
 - **Tracing integrado** — visualização do grafo de execução no OpenAI dashboard

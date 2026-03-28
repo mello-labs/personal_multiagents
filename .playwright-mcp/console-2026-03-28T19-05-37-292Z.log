@@ -1,0 +1,4 @@
+[   11523ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://dashboard.neoprotocol.space/api/neo/ecosystem/live:0
+[   11524ms] [WARNING] live ecosystem unavailable: auth_required @ https://dashboard.neoprotocol.space/ecosystem-3d.html?v=20260224c:896
+[   11893ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://dashboard.neoprotocol.space/api/neo/ecosystem:0
+[   12325ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://dashboard.neoprotocol.space/ecosystem-graph.json:0
