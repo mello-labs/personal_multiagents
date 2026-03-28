@@ -213,7 +213,7 @@ multiagentes/
 
 ```bash
 OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o
+OPENAI_MODEL=gpt-4o-mini
 
 NOTION_TOKEN=
 NOTION_TASKS_DB_ID=

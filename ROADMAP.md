@@ -209,6 +209,7 @@ def retrieve_relevant_history(query: str, n=5) -> list[str]: ...
 ### 3.3 Observabilidade com OpenTelemetry
 
 Adicionar tracing distribuído para ver o grafo completo de execução:
+
 - Cada handoff vira um **span** com atributos (agente origem, destino, latência, tokens usados)
 - Exportar para **Jaeger** (local) ou **Honeycomb** (cloud)
 - Dashboard de custo por agente (tokens × preço GPT-4o)
@@ -220,6 +221,7 @@ Isso é crítico quando o sistema crescer: você vai querer saber qual agente es
 **Problema atual:** os agentes se comunicam de forma síncrona (o Orchestrator espera cada handoff terminar antes de chamar o próximo).
 
 **Evolução:** introduzir **Redis Streams** como bus de mensagens:
+
 - O Orchestrator publica eventos (`task.created`, `session.started`, `block.overdue`)
 - Cada agente é um consumer group que reage aos eventos de seu interesse
 - O Focus Guard não precisa mais de polling — ele reage ao evento `block.overdue` em tempo real
@@ -247,6 +249,7 @@ Para operações de análise de histórico e retrospectiva (sem dados sensíveis
 
 ## Referência rápida de decisões de arquitetura
 
+```text
 | Decisão | Hoje | Próximo passo |
 |---|---|---|
 | Persistência | SQLite local | SQLite + ChromaDB para memória semântica |
@@ -259,3 +262,4 @@ Para operações de análise de histórico e retrospectiva (sem dados sensíveis
 | Observabilidade | Logs em arquivo | OpenTelemetry + Jaeger |
 | Alertas | Terminal | Terminal + Slack/Discord webhook |
 | Testes | Nenhum | pytest + mocks para APIs externas |
+```text

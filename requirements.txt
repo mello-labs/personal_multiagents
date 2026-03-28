@@ -4,7 +4,7 @@
 # Instale com: pip install -r requirements.txt
 
 # ---------------------------------------------------------------------------
-# OpenAI SDK (client oficial — GPT-4o)
+# OpenAI SDK (client oficial — GPT-4o-mini)
 # ---------------------------------------------------------------------------
 openai>=1.51.0
 

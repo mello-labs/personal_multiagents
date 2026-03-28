@@ -9,14 +9,15 @@
 
 Antes de qualquer evolução, o sistema precisa estar rodando de verdade.
 
-**1. Configurar o ambiente**
+### 1. Configurar o ambiente
 
 - Copiar `.env.example` para `.env` e preencher `OPENAI_API_KEY`, `NOTION_TOKEN`, `NOTION_TASKS_DB_ID`, `NOTION_AGENDA_DB_ID`
 - `pip install -r requirements.txt`
 
-**2. Criar os databases no Notion com a estrutura exata**
+### 2. Criar os databases no Notion com a estrutura exata
 
-```
+```text
+
 Database **Tarefas**:
 | Campo | Tipo |
 |---|---|
@@ -33,9 +34,10 @@ Database **Agenda Diária**:
 | Bloco horário | Rich Text |
 | Tarefa vinculada | Relation → Tarefas |
 | Concluído | Checkbox |
+
 ```
 
-**3. Validar o fluxo completo**
+### 3. Validar o fluxo completo
 
 ```bash
 python main.py demo       # popula dados de teste
@@ -137,7 +139,7 @@ python main.py retrospective   # ou automatizado todo domingo às 18h via system
 
 Em vez de só CLI, expor o Orchestrator via HTTP:
 
-```
+```text
 POST /chat          → orchestrator.process(user_input)
 GET  /status        → orchestrator.get_system_summary()
 GET  /agenda        → scheduler.get_today_schedule()
@@ -256,7 +258,7 @@ O Focus Guard, além de imprimir no terminal, envia mensagem no Slack/Discord vi
 
 ### 4.3 Análise de padrões com modelo local (Ollama)
 
-Para operações de análise de histórico e retrospectiva (sem dados sensíveis saindo para a OpenAI), rodar um modelo local via **Ollama** (`llama3`, `mistral`, `qwen`). O sistema passa a ter dois clientes LLM: GPT-4o para decisões em tempo real e modelo local para análises assíncronas de longo prazo.
+Para operações de análise de histórico e retrospectiva (sem dados sensíveis saindo para a OpenAI), rodar um modelo local via **Ollama** (`llama3`, `mistral`, `qwen`). O sistema passa a ter dois clientes LLM: GPT-4o-mini para decisões em tempo real e modelo local para análises assíncronas de longo prazo.
 
 ---
 
@@ -266,7 +268,7 @@ Para operações de análise de histórico e retrospectiva (sem dados sensíveis
 | ------------------------- | ----------------------------- | ---------------------------------------- |
 | Persistência              | SQLite local                  | SQLite + ChromaDB para memória semântica |
 | Comunicação entre agentes | Handoffs síncronos via função | Redis Streams (async, pub/sub)           |
-| LLM                       | GPT-4o (OpenAI API)           | GPT-4o + modelo local (Ollama)           |
+| LLM                       | GPT-4o-mini                   | GPT-5.2 + modelo local (Ollama)          |
 | SDK de agentes            | OpenAI client manual          | `openai-agents` SDK oficial              |
 | Focus Guard               | Thread daemon                 | Processo systemd/launchd                 |
 | Interface                 | CLI (argparse)                | CLI + Web (FastAPI + HTMX)               |
