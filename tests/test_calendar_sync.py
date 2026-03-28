@@ -1,6 +1,3 @@
-from datetime import date
-
-
 def test_normalize_date_range_swaps():
     from agents import calendar_sync
 
