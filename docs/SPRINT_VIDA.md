@@ -1,8 +1,8 @@
 # SPRINT VIDA — Interrupção Cognitiva e Rotinas Pessoais
 
-**Status:** Pronto para implementar
+**Status:** Implementado (30/03/2026)
 **Prioridade:** P0 — resolve o problema central: hiperfoco sem consciência de tempo
-**Estimativa:** 2-3 dias de implementação real
+**Implementação:** completa — todos os entregáveis codificados e integrados
 
 ---
 
@@ -397,10 +397,15 @@ LIFE_GUARD_WATER_INTERVAL=90
 
 ## Critérios de aceite
 
-- [ ] `notifier.mac_push("teste", "funciona")` abre pop-up no canto da tela
-- [ ] `notifier.alexa_announce("teste")` faz a Alexa falar na sala
-- [ ] Focus Guard com sessão aberta há 30min → mac push automático
-- [ ] Focus Guard com sessão aberta há 2h → mac push + Alexa
-- [ ] `python main.py vida` imprime status das rotinas do dia
-- [ ] `python main.py fiz banho` confirma a rotina e para o lembrete do dia
-- [ ] Finance alert dispara 3 dias antes do vencimento
+- [x] `notifier.mac_push("teste", "funciona")` abre pop-up no canto da tela
+- [x] `notifier.alexa_announce("teste")` faz a Alexa falar na sala (Voice Monkey primário, IFTTT fallback)
+- [x] Focus Guard com sessão aberta há 30min → mac push automático
+- [x] Focus Guard com sessão aberta há 2h → mac push + Alexa
+- [x] `python main.py vida` imprime status das rotinas do dia
+- [x] `python main.py fiz banho` confirma a rotina e para o lembrete do dia
+- [x] Finance alert dispara 3 dias antes do vencimento
+
+## Nota de implementação
+
+- `alexa_announce()` implementada com **Voice Monkey** como canal primário (API direta, voz configurável) e **IFTTT** como fallback. O sprint original especificava apenas IFTTT, mas Voice Monkey oferece menor latência e voz personalizada.
+- Life Guard roda automaticamente dentro do loop do Focus Guard (`_run_focus_check` chama `life_guard.run_all_checks()`).

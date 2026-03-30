@@ -1,59 +1,26 @@
 # Roadmap — Sistema de Multiagentes para Gestão Pessoal
 
-**Atualizado em:** 25/03/2026
-**Estado atual:** v0.1 — MVP funcional (CLI + 5 agentes + SQLite + Notion REST)
+**Atualizado em:** 30/03/2026
+**Estado atual:** v0.3 — Fase 2 operacional (Web UI + 10 agentes + Redis + Notion + Google Calendar + Sanity)
 
 ---
 
-## Fase 0 — Ativação (agora)
+## Fase 0 — Ativação ✅ concluída
 
-Antes de qualquer evolução, o sistema precisa estar rodando de verdade.
-
-*1. Configurar o ambiente*  
-
-- Copiar `.env.example` para `.env` e preencher `OPENAI_API_KEY`, `NOTION_TOKEN`, `NOTION_TASKS_DB_ID`, `NOTION_AGENDA_DB_ID`
-- `pip install -r requirements.txt`
-
-2.Criar os databases no Notion com a estrutura exata
-
-```text
-Database **Tarefas**:
-| Campo | Tipo |
-|---|---|
-| Nome | Title |
-| Status | Select → "A fazer", "Em progresso", "Concluído" |
-| Prioridade | Select → "Alta", "Média", "Baixa" |
-| Horário previsto | Rich Text |
-| Horário real | Rich Text |
-
-Database **Agenda Diária**:
-| Campo | Tipo |
-|---|---|
-| Data | Date |
-| Bloco horário | Rich Text |
-| Tarefa vinculada | Relation → Tarefas |
-| Concluído | Checkbox |
-```
-
-3.Validar o fluxo completo:  
-
-```bash
-python main.py demo       # popula dados de teste
-python main.py status     # verifica se tudo está lendo o SQLite
-python main.py sync       # valida conexão com o Notion
-python main.py            # entra no modo interativo e testa um comando natural
-```
+- [x] Configurar `.env` com `OPENAI_API_KEY`, `NOTION_TOKEN`, `NOTION_TASKS_DB_ID`, `NOTION_AGENDA_DB_ID`
+- [x] Databases no Notion com estrutura exata (Tarefas + Agenda Diária)
+- [x] Fluxo validado: `demo` → `status` → `sync` → modo interativo
 
 ---
 
-## Fase 1 — Estabilização (próximas 1–2 semanas)
+## Fase 1 — Estabilização ✅ parcialmente concluída
 
-### 1.1 Tornar o Focus Guard um processo persistente
+### 1.1 Focus Guard persistente ⏳ pendente
 
-**Problema atual:** o Focus Guard morre quando o terminal fecha.
+**Problema:** o Focus Guard morre quando o terminal fecha.
 
 **Solução — macOS (launchd):**
-Criar `~/Library/LaunchAgents/com.multiagentes.focusguard.plist` apontando para `python main.py` com `KeepAlive = true`. O sistema operacional reinicia automaticamente se o processo cair.
+Criar `~/Library/LaunchAgents/com.multiagentes.focusguard.plist` apontando para `python main.py` com `KeepAlive = true`.
 
 **Solução — Linux (systemd):**
 
@@ -69,98 +36,90 @@ Restart=always
 WantedBy=default.target
 ```
 
-**Alternativa mais simples:** extrair o Focus Guard para um `focus_guard_service.py` standalone que só roda o loop, e chamar via `nohup python focus_guard_service.py &` num script de startup.
+Script `scripts/install_launchd.sh` já existe no repo.
 
-### 1.2 Logging estruturado
+### 1.2 Logging estruturado ⏳ pendente
 
-Trocar o logging simples por **structlog** ou **loguru**. Isso permite:
+Trocar o logging atual por **structlog** ou **loguru** para:
 
 - Filtrar logs por agente
-- Exportar para JSON para análise posterior
+- Exportar JSON para análise posterior
 - Correlacionar handoffs pelo `handoff_id`
 
-### 1.3 Testes automatizados
+### 1.3 Testes automatizados ✅ concluída
 
-Criar `tests/` com pytest cobrindo pelo menos:
+Suite `tests/` com pytest cobrindo:
 
-- `memory.py` — todas as operações CRUD (rodar com banco in-memory `:memory:`)
-- `scheduler.py` — detecção de conflitos e cálculo de carga
-- `validator.py` — lógica de `check_data_consistency` sem LLM
-- `notion_sync.py` — mockar o `requests` com `responses` ou `httpx` para não chamar a API real
+- `test_memory.py` — operações CRUD
+- `test_focus_guard.py` — análise de progresso, escalada
+- `test_notion_sync.py` — mock de requests
+- `test_orchestrator.py` — roteamento e handoffs
+- `test_web_chat.py` — rotas FastAPI
 
-### 1.4 Tratamento de rate limit da Notion API
+### 1.4 Tratamento de rate limit da Notion API ✅ concluída
 
-A Notion API tem limite de 3 req/s. Adicionar retry com backoff exponencial em `notion_sync._request()`:
-
-```python
-from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-```
+Retry com backoff exponencial via `tenacity` aplicado em `notion_sync._request()`. Retrospective.py também usa o mesmo mecanismo (corrigido em auditoria A5).
 
 ---
 
-## Fase 2 — Novas capacidades (próximo mês)
+## Fase 2 — Novas capacidades ✅ operacional
 
-### 2.1 Sync bidirecional em tempo real com Notion
+### 2.1 Sync bidirecional com Notion ✅ concluída
 
-**Hoje:** sync é manual (você chama `sync`).
-**Próximo:** polling periódico no Focus Guard (a cada N minutos, verifica mudanças no Notion e atualiza o SQLite local).
+Polling diferencial implementado: `notion_sync.sync_differential()` com filtro `last_edited_time`. Rodando automaticamente no loop do Focus Guard a cada `NOTION_SYNC_INTERVAL` minutos.
 
-Notion não tem webhooks nativos por integração (apenas via automations internas), então a abordagem mais prática é um **polling diferencial**: guardar o timestamp da última sync em `system_state` e usar o filtro `last_edited_time` na query do database.
+### 2.2 Agente de Retrospectiva Semanal ✅ concluída
 
-```python
-# Em notion_sync.py
-def fetch_tasks_modified_since(last_sync_iso: str) -> list[dict]:
-    payload = {
-        "filter": {
-            "timestamp": "last_edited_time",
-            "last_edited_time": {"after": last_sync_iso}
-        }
-    }
-```
+`agents/retrospective.py` — lê focus_sessions e handoffs da semana, calcula métricas (taxa de conclusão, tempo real vs. planejado), gera relatório via GPT-4o, cria página no Notion.
 
-### 2.2 Agente de Retrospectiva Semanal
+Acionado via `python main.py retrospective` ou `make retro`.
 
-Novo agente `agents/retrospective.py` que:
+### 2.3 Interface Web (FastAPI + HTMX) ✅ concluída
 
-1. Lê todas as `focus_sessions` e `agent_handoffs` da semana
-2. Calcula métricas: taxa de conclusão, tempo médio real vs. planejado, horários mais produtivos
-3. Gera um relatório via GPT-4o com insights e sugestões para a semana seguinte
-4. Cria uma página de retrospectiva no Notion automaticamente
+PWA completa com 5 tabs:
 
-Acionado via:
+| Rota | Função |
+|------|--------|
+| `/` | Dashboard (métricas, agenda do dia, tarefas) |
+| `/agenda` | Agenda navegável com filtro de datas e importação |
+| `/tasks-page` | Criar e gerenciar tarefas |
+| `/chat-page` | Chat full-screen com Orchestrator |
+| `/audit` | Eventos, alertas, handoffs, logs |
 
-```bash
-python main.py retrospective   # ou automatizado todo domingo às 18h via systemd
-```
+Detalhes em `docs/MANUAL_DEV.md` e `docs/MANUAL_USUARIO.md`.
 
-### 2.3 Interface Web leve (FastAPI + HTMX)
+### 2.4 Google Calendar ✅ concluída
 
-Em vez de só CLI, expor o Orchestrator via HTTP:
+`agents/calendar_sync.py` — OAuth 2.0 completo, importa eventos como blocos de agenda, respeita timezone local.
 
-```text
-POST /chat          → orchestrator.process(user_input)
-GET  /status        → orchestrator.get_system_summary()
-GET  /agenda        → scheduler.get_today_schedule()
-POST /task          → criar tarefa
-PATCH /task/{id}    → atualizar status
-```
+Acionado via `python main.py calendar auth|import|status` ou `make calendar-auth|calendar-import`.
 
-Frontend: **HTMX** + templates Jinja2 — sem build step, sem Node, abre no browser. O Focus Guard continua rodando em background thread dentro do mesmo processo FastAPI via `lifespan`.
+### 2.5 SPRINT VIDA — Interrupção Cognitiva ✅ concluída
 
-### 2.4 Google Calendar como fonte de verdade do Scheduler
+Implementado conforme `docs/SPRINT_VIDA.md`:
 
-Integrar a **Google Calendar API** para:
+- **`core/notifier.py`** — `mac_push()` (osascript) + `alexa_announce()` (Voice Monkey → fallback IFTTT)
+- **`agents/focus_guard.py`** — `ESCALATION_LEVELS` com 4 níveis (30min/60min/2h/4h), canais mac/alexa
+- **`agents/life_guard.py`** — rotinas diárias (exercício, banho, almoço, jantar), hidratação cada 90min, alertas de finanças
+- **`main.py`** — comandos `vida`, `fiz <rotina>`, `pagar <nome> dia <N> valor <V>`
 
-- Importar eventos do calendário como blocos de agenda (reuniões já agendadas criam blocos automaticamente)
-- Bloquear horários ocupados antes de sugerir agenda
-- Exportar blocos criados pelo Scheduler de volta ao calendário
+### 2.6 Persona Selector ✅ concluída
 
-```python
-# agents/calendar_sync.py (novo agente)
-from googleapiclient.discovery import build
-```
+`agents/persona_manager.py` — carrega personas de `/personas/*.json`, injeta system prompt dinâmico no Orchestrator. 3 personas: architect, coordinator, taylor.
 
-O Orchestrator passaria a acionar `calendar_sync` antes do `scheduler` para ter contexto completo do dia.
+### 2.7 Sanity.io — Externalização de Prompts ✅ parcialmente concluída
+
+- **`core/sanity_client.py`** — GROQ queries, cache 5min, fallback para hardcoded
+- **Projeto Sanity** — `n4dgl02q`, dataset `production`, API token configurado
+- **`agents/focus_guard.py`** — já consome prompt via `sanity_client.get_prompt()`
+- **Sanity Studio** — scaffolding em `sanity/`, schemas pendentes de deploy
+- **Pendente:** deploy dos 4 schemas (`llm_prompt`, `persona`, `agent_config`, `intervention_script`) e migração dos prompts hardcoded
+
+Detalhes em `docs/SANITY_SCHEMA.md`.
+
+### 2.8 Auditoria de Código ✅ concluída
+
+13 issues identificadas e corrigidas (6 HIGH, 7 MEDIUM). Registro completo em `docs/AUDITORIA_AGENTES.md`.
 
 ---
 
@@ -168,23 +127,15 @@ O Orchestrator passaria a acionar `calendar_sync` antes do `scheduler` para ter 
 
 ### 3.1 Migrar para o OpenAI Agents SDK oficial
 
-O SDK `openai-agents` (lançado em março de 2025) fornece primitivas nativas de:
+O SDK `openai-agents` fornece:
 
 - **Handoffs declarativos** — `handoff(agent, tool_choice="required")`
 - **Guardrails** — validação de input/output por agente
-- **Tracing integrado** — visualização do grafo de execução no OpenAI dashboard
-- **Streaming de respostas** — o Orchestrator streama enquanto os agentes processam
-
-A migração do `orchestrator.py` atual (que faz roteamento manual via JSON) para o SDK reduz código e adiciona observabilidade nativa. O restante dos agentes (`scheduler`, `focus_guard`, etc.) vira `@function_tool` registrado no agente orquestrador.
+- **Tracing integrado** — visualização do grafo de execução
+- **Streaming de respostas**
 
 ```python
 from agents import Agent, Runner, handoff, function_tool
-
-scheduler_agent = Agent(
-    name="Scheduler",
-    instructions="...",
-    tools=[get_today_schedule, add_schedule_block, suggest_agenda],
-)
 
 orchestrator = Agent(
     name="Orchestrator",
@@ -193,7 +144,6 @@ orchestrator = Agent(
         handoff(scheduler_agent),
         handoff(focus_guard_agent),
         handoff(notion_sync_agent),
-        handoff(validator_agent),
     ],
 )
 
@@ -202,77 +152,68 @@ result = await Runner.run(orchestrator, user_input)
 
 ### 3.2 Memória semântica de longo prazo
 
-**Problema:** o Orchestrator não aprende com o histórico. Hoje ele só tem acesso ao SQLite estruturado — não "lembra" que você sempre atrasa tarefas de sexta à tarde, ou que reuniões de 2h te deixam sem foco.
+Embeddings + **ChromaDB** (local, sem servidor):
 
-**Solução:** adicionar uma camada de **embeddings + vector store**:
-
-1. Ao fim de cada dia, o agente de Retrospectiva gera um resumo textual e o embeda via `text-embedding-3-small`
-2. Guarda em **ChromaDB** (local, sem servidor) ou **Qdrant** (self-hosted)
-3. O Orchestrator faz RAG no histórico antes de rotear: "baseado nos seus padrões dos últimos 30 dias, você costuma ser mais produtivo entre 9h e 11h — vou priorizar as tarefas de alta prioridade neste bloco"
-
-```python
-# core/long_term_memory.py
-import chromadb
-from openai import OpenAI
-
-def embed_and_store(text: str, metadata: dict) -> None: ...
-def retrieve_relevant_history(query: str, n=5) -> list[str]: ...
-```
+- Retrospectiva embeda resumo diário via `text-embedding-3-small`
+- Orchestrator faz RAG no histórico dos últimos 30 dias
+- Permite insights como "você é mais produtivo entre 9h e 11h"
 
 ### 3.3 Observabilidade com OpenTelemetry
 
-Adicionar tracing distribuído para ver o grafo completo de execução:
+- Cada handoff vira um **span** (agente origem, destino, latência, tokens)
+- Export para **Jaeger** (local) ou **Honeycomb** (cloud)
+- Dashboard de custo por agente
 
-- Cada handoff vira um **span** com atributos (agente origem, destino, latência, tokens usados)
-- Exportar para **Jaeger** (local) ou **Honeycomb** (cloud)
-- Dashboard de custo por agente (tokens × preço GPT-4o)
+### 3.4 Comunicação via Redis Streams
 
-Isso é crítico quando o sistema crescer: você vai querer saber qual agente está mais lento, qual chain tem mais falhas, e quanto está gastando por dia de uso.
+Transição de orquestração síncrona para coreografia (push):
 
-### 3.4 Comunicação entre agentes via message queue
-
-**Problema atual:** os agentes se comunicam de forma síncrona (o Orchestrator espera cada handoff terminar antes de chamar o próximo).
-
-**Evolução:** introduzir **Redis Streams** como bus de mensagens:
-
-- O Orchestrator publica eventos (`task.created`, `session.started`, `block.overdue`)
-- Cada agente é um consumer group que reage aos eventos de seu interesse
-- O Focus Guard não precisa mais de polling — ele reage ao evento `block.overdue` em tempo real
-- Permite paralelismo real: Notion Sync e Scheduler processam simultaneamente
-
-Esse padrão transforma o sistema de "orquestrado" (pull) para "coreografado" (push), o que é mais resiliente e escalável.
+- Orchestrator publica eventos (`task.created`, `session.started`, `block.overdue`)
+- Cada agente é consumer group que reage aos eventos relevantes
+- Focus Guard reage em tempo real em vez de polling
 
 ---
 
 ## Fase 4 — Integrações externas (3–6 meses)
 
-### 4.1 Linear / Jira como fonte de tarefas profissionais
+### 4.1 SPRINT ECOSSISTEMA — Monitoramento ativo ⏳ próximo
 
-Novo agente `agents/project_sync.py` que lê issues atribuídas a você no Linear ou Jira e as importa como tarefas locais. O Scheduler considera deadlines de sprint ao priorizar.
+`agents/ecosystem_monitor.py` — spec completa em `docs/SPRINT_ECOSSISTEMA.md`:
 
-### 4.2 Slack / Discord para alertas fora do terminal
+- GitHub: commits, PRs, issues por org (6 orgs)
+- Railway: status de serviços via GraphQL
+- Vercel: deploys recentes
+- On-chain: NEOFLW token via DexScreener
+- Relatório diário 20h via mac push
+- Health check a cada 30min
 
-O Focus Guard, além de imprimir no terminal, envia mensagem no Slack/Discord via webhook quando detecta desvio severo. Funciona mesmo com o terminal fechado (desde que o processo esteja rodando como serviço).
+### 4.2 Linear / Jira como fonte de tarefas profissionais
 
-### 4.3 Análise de padrões com modelo local (Ollama)
+`agents/project_sync.py` — lê issues atribuídas e importa como tarefas locais.
 
-Para operações de análise de histórico e retrospectiva (sem dados sensíveis saindo para a OpenAI), rodar um modelo local via **Ollama** (`llama3`, `mistral`, `qwen`). O sistema passa a ter dois clientes LLM: GPT-4o para decisões em tempo real e modelo local para análises assíncronas de longo prazo.
+### 4.3 Slack / Discord para alertas fora do terminal
+
+Focus Guard envia via webhook quando detecta desvio severo.
+
+### 4.4 Modelo local via Ollama
+
+`llama3` / `mistral` / `qwen` para análises assíncronas de longo prazo sem egress para cloud.
 
 ---
 
 ## Referência rápida de decisões de arquitetura
 
-```text
 | Decisão | Hoje | Próximo passo |
 |---|---|---|
-| Persistência | SQLite local | SQLite + ChromaDB para memória semântica |
+| Persistência | Redis (Railway) + SQLite fallback | + ChromaDB para memória semântica |
 | Comunicação entre agentes | Handoffs síncronos via função | Redis Streams (async, pub/sub) |
-| LLM | GPT-4o (OpenAI API) | GPT-4o + modelo local (Ollama) |
-| SDK de agentes | OpenAI client manual | `openai-agents` SDK oficial |
-| Focus Guard | Thread daemon | Processo systemd/launchd |
-| Interface | CLI (argparse) | CLI + Web (FastAPI + HTMX) |
-| Fonte de agenda | Notion manual | Notion + Google Calendar |
-| Observabilidade | Logs em arquivo | OpenTelemetry + Jaeger |
-| Alertas | Terminal | Terminal + Slack/Discord webhook |
-| Testes | Nenhum | pytest + mocks para APIs externas |
-```text
+| LLM | GPT-4o-mini (OpenAI API) | + modelo local (Ollama) |
+| SDK de agentes | OpenAI client via `core/openai_utils.py` | `openai-agents` SDK oficial |
+| Focus Guard | Thread daemon no processo web | Processo systemd/launchd dedicado |
+| Interface | CLI + Web (FastAPI + HTMX + PWA) | PWA com push notifications |
+| Fonte de agenda | Notion + Google Calendar | + Linear/Jira |
+| Observabilidade | Logs em arquivo + audit trail Redis | OpenTelemetry + Jaeger |
+| Alertas | Terminal + macOS push + Alexa (Voice Monkey/IFTTT) | + Slack/Discord webhook |
+| Testes | pytest (5 modules) | + integration tests + coverage gate |
+| Config externa | Sanity.io (prompts, personas, agent config) | Deploy schemas + migrar todos os prompts |
+| Notificações | macOS osascript + Voice Monkey (fallback IFTTT) | + Web Push + Telegram |

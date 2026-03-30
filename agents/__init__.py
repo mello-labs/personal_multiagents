@@ -8,6 +8,7 @@
 __all__ = [
     "calendar_sync",
     "focus_guard",
+    "life_guard",
     "notion_sync",
     "orchestrator",
     "persona_manager",

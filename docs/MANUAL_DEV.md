@@ -5,7 +5,9 @@
 - **Backend**: Python 3.11+ / FastAPI / Uvicorn
 - **Frontend**: Jinja2 templates + HTMX 1.9 (zero JS framework)
 - **Persistencia**: Redis (Railway) com fallback SQLite local
-- **Agentes**: OpenAI GPT via orchestrator, Focus Guard, Notion Sync, Calendar Sync, Scheduler, Validator
+- **Agentes**: OpenAI GPT via orchestrator, Focus Guard, Scheduler, Notion Sync, Calendar Sync, Validator, Retrospective, Life Guard, Persona Manager
+- **Config externa**: Sanity.io (prompts, personas, agent config) via `core/sanity_client.py`
+- **Notificações**: macOS push (osascript), Alexa (Voice Monkey / IFTTT fallback)
 - **Deploy**: Railway (Dockerfile) ou local
 
 ## Estrutura de arquivos relevantes
@@ -138,14 +140,39 @@ open http://localhost:8000
 
 ## Variáveis de ambiente necessarias
 
+Referência completa em `.env.example` na raiz do projeto. Resumo:
+
 ```
+# Obrigatório
 OPENAI_API_KEY=          # Para o orchestrator (chat)
 NOTION_TOKEN=            # Para sync com Notion
 NOTION_TASKS_DB_ID=      # Database de tarefas no Notion
 NOTION_AGENDA_DB_ID=     # Database de agenda no Notion
+
+# Infraestrutura
 REDIS_URL=               # Redis (Railway ou local)
-GOOGLE_CREDENTIALS_FILE= # OAuth credentials do Google Calendar
-GOOGLE_TOKEN_FILE=       # Token OAuth do Google Calendar
+LOG_FILE=                # Arquivo de log
+LOG_LEVEL=               # DEBUG/INFO/WARNING/ERROR
+WEB_HOST=                # Host do FastAPI (default: 127.0.0.1)
+WEB_PORT=                # Porta do FastAPI (default: 8000)
+
+# Google Calendar
+GOOGLE_CREDENTIALS_FILE= # OAuth credentials
+GOOGLE_TOKEN_FILE=       # Token OAuth
+
+# Sanity.io
+SANITY_PROJECT_ID=       # Project ID
+SANITY_API_TOKEN=        # Token Viewer
+SANITY_DATASET=          # Dataset (default: production)
+
+# Notificações
+VOICE_MONKEY_TOKEN=      # Alexa via Voice Monkey (primário)
+IFTTT_WEBHOOK_KEY=       # Alexa via IFTTT (fallback)
+
+# Life Guard
+LIFE_GUARD_ACTIVE_HOUR_START=  # Hora início (default: 8)
+LIFE_GUARD_ACTIVE_HOUR_END=    # Hora fim (default: 22)
+LIFE_GUARD_WATER_INTERVAL=     # Minutos entre lembretes de água (default: 90)
 ```
 
 ## Deploy (Railway)

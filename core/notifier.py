@@ -167,22 +167,35 @@ def mac_push(title: str, message: str, sound: bool = False) -> None:
 
 
 def alexa_announce(message: str) -> None:
-    """Dispara anúncio na Alexa via Voice Monkey API."""
+    """Dispara anúncio na Alexa. Tenta Voice Monkey primeiro; cai para IFTTT se não configurado."""
     import os
     import requests
-    token = os.getenv("VOICE_MONKEY_TOKEN", "")
-    device = os.getenv("VOICE_MONKEY_DEVICE", "eco-room")
-    if not token:
+
+    vm_token = os.getenv("VOICE_MONKEY_TOKEN", "")
+    if vm_token:
+        try:
+            device = os.getenv("VOICE_MONKEY_DEVICE", "eco-room")
+            voice = os.getenv("VOICE_MONKEY_VOICE", "Ricardo")
+            requests.get(
+                "https://api-v2.voicemonkey.io/announcement",
+                params={"token": vm_token, "device": device, "text": message, "voice": voice},
+                timeout=5,
+            )
+        except Exception:
+            pass
         return
-    try:
-        voice = os.getenv("VOICE_MONKEY_VOICE", "Ricardo")
-        requests.get(
-            "https://api-v2.voicemonkey.io/announcement",
-            params={"token": token, "device": device, "text": message, "voice": voice},
-            timeout=5,
-        )
-    except Exception:
-        pass
+
+    ifttt_key = os.getenv("IFTTT_WEBHOOK_KEY", "")
+    if ifttt_key:
+        event = os.getenv("IFTTT_ALEXA_EVENT", "neo_alert")
+        try:
+            requests.post(
+                f"https://maker.ifttt.com/trigger/{event}/with/key/{ifttt_key}",
+                json={"value1": message},
+                timeout=5,
+            )
+        except Exception:
+            pass
 
 
 # ---------------------------------------------------------------------------

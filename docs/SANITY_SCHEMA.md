@@ -1,9 +1,23 @@
 # SANITY.IO — Schema e Integração
 
-**Status:** Pronto para criar no Studio
-**Projeto Sanity:** criar em sanity.io/manage
+**Status:** Parcialmente implementado (30/03/2026)
+**Projeto Sanity:** `n4dgl02q` (criado em sanity.io/manage)
 **Dataset:** `production`
 **Propósito:** externalizar prompts, personas e configs — sem redeploy para ajustes
+
+### O que já está feito
+
+- [x] Projeto Sanity criado (`n4dgl02q`)
+- [x] API token configurado no `.env` (SANITY_API_TOKEN, SANITY_PROJECT_ID)
+- [x] `core/sanity_client.py` — GROQ queries, cache 5min, fallback para hardcoded
+- [x] `focus_guard.py` já consome prompt via `sanity_client.get_prompt()`
+- [x] Sanity Studio scaffolding em `sanity/` (package.json, deps instaladas)
+
+### O que falta
+
+- [ ] Deploy dos 4 schemas abaixo no Sanity Studio
+- [ ] Migrar prompts hardcoded para documentos no Studio (tabela no final)
+- [ ] Endpoint `/admin/reload-config` para `invalidate_cache()`
 
 ---
 

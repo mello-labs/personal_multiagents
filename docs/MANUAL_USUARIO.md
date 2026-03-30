@@ -76,16 +76,41 @@ O app tem 5 abas na parte inferior:
 - **Guard** com ponto vermelho = Focus Guard desligado
 - Relogio atualizado automaticamente
 
+## Life Guard — Rotinas Pessoais
+
+O sistema monitora rotinas diarias automaticamente via Focus Guard:
+
+| Rotina | Horario | Canal |
+|--------|---------|-------|
+| Exercicio | 07:00 | Mac push |
+| Banho | 10:00 | Mac push |
+| Almoco | 12:30 | Mac push + Alexa |
+| Jantar | 19:30 | Mac push |
+| Agua | cada 90 min (8h-22h) | Mac push |
+
+Para confirmar uma rotina feita: `python main.py fiz banho` (ou exercicio, almoco, jantar).
+
+Para ver status do dia: `python main.py vida`.
+
+Para registrar conta a pagar: `python main.py pagar Cartao XP dia 15 valor 1200` — alerta 3 dias antes do vencimento.
+
 ## Notificacoes
 
-O app esta preparado para push notifications. Quando ativadas, voce recebera alertas de:
+O sistema envia notificacoes ativas via:
 
-- Proximo compromisso em 15 min / 5 min
-- Bloco atrasado
-- Reagendamento automatico
-- Resumo diario
+- **macOS push** — pop-up no canto da tela (osascript)
+- **Alexa** — anuncio por voz via Voice Monkey (ou IFTTT como fallback)
 
-(Funcionalidade de push sera ativada em versao futura via Telegram ou Web Push)
+Alertas automaticos:
+
+- Sessao de foco ha 30 min → mac push
+- Sessao de foco ha 1 hora → mac push com som
+- Sessao de foco ha 2 horas → mac push + Alexa
+- Sessao de foco ha 4 horas → mac push + Alexa ("sai do computador")
+- Rotinas diarias nos horarios configurados
+- Financas proximas do vencimento
+
+(Web Push e Telegram planejados para versao futura)
 
 ## Dicas
 
