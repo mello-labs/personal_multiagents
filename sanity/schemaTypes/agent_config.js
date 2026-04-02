@@ -9,17 +9,53 @@ export default {
       type: 'string',
       options: {
         list: [
+          'orchestrator',
           'focus_guard',
           'scheduler',
-          'life_guard',
-          'ecosystem_monitor',
           'notion_sync',
-          'orchestrator',
           'validator',
-          'retrospective'
+          'retrospective',
+          'calendar_sync',
+          'life_guard',
+          'persona_manager',
+          'gemma_local',
+          'ecosystem_monitor'
         ]
       },
       validation: Rule => Rule.required()
+    },
+    {
+      name: 'uses_llm',
+      title: 'Usa LLM',
+      type: 'boolean',
+      initialValue: false
+    },
+    {
+      name: 'provider_preference',
+      title: 'Provider preferido',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Auto', value: 'auto' },
+          { title: 'OpenAI', value: 'openai' },
+          { title: 'Gemma local', value: 'gemma_local' },
+          { title: 'Nenhum', value: 'none' }
+        ],
+        layout: 'radio'
+      },
+      initialValue: 'auto'
+    },
+    {
+      name: 'primary_model',
+      title: 'Modelo principal',
+      type: 'string',
+      description: 'Ex.: gpt-4o-mini ou gemma3:4B-F16'
+    },
+    {
+      name: 'fallback_model',
+      title: 'Modelo fallback',
+      type: 'string',
+      description: 'Modelo usado quando o principal falhar'
     },
     {
       name: 'enabled',
@@ -33,6 +69,30 @@ export default {
       type: 'number'
     },
     {
+      name: 'can_write_redis',
+      title: 'Pode escrever no Redis',
+      type: 'boolean',
+      initialValue: true
+    },
+    {
+      name: 'can_write_sanity',
+      title: 'Pode escrever no Sanity',
+      type: 'boolean',
+      initialValue: false
+    },
+    {
+      name: 'can_publish_public',
+      title: 'Pode publicar em canal público',
+      type: 'boolean',
+      initialValue: false
+    },
+    {
+      name: 'notes',
+      title: 'Notas operacionais',
+      type: 'text',
+      rows: 4
+    },
+    {
       name: 'parameters',
       title: 'Parâmetros adicionais (JSON)',
       type: 'text',
@@ -41,6 +101,16 @@ export default {
     }
   ],
   preview: {
-    select: { title: 'agent_name', subtitle: 'enabled' }
+    select: {
+      title: 'agent_name',
+      enabled: 'enabled',
+      provider: 'provider_preference'
+    },
+    prepare({ title, enabled, provider }) {
+      return {
+        title,
+        subtitle: `${enabled ? 'ativo' : 'desligado'} · ${provider || 'sem provider'}`
+      }
+    }
   }
 }

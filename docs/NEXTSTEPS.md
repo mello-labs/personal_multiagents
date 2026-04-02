@@ -34,36 +34,37 @@ Se não houve commit ainda, escrever:
 
 ### Pode entrar no commit seguro
 
-- [config.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/config.py)
-- [Dockerfile](/Users/nettomello/CODIGOS/mypersonal_multiagents/Dockerfile)
-- [.devcontainer/devcontainer.json](/Users/nettomello/CODIGOS/mypersonal_multiagents/.devcontainer/devcontainer.json)
-- [agents/notion_sync.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/agents/notion_sync.py)
-- [core/memory.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/core/memory.py)
-- [core/notifier.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/core/notifier.py)
-- [sanity/schemaTypes/persona.js](/Users/nettomello/CODIGOS/mypersonal_multiagents/sanity/schemaTypes/persona.js)
-- [tests/test_calendar_sync.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/tests/test_calendar_sync.py)
-- [tests/test_memory.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/tests/test_memory.py)
-- [tests/test_notifier_openai_utils.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/tests/test_notifier_openai_utils.py)
-- [tests/test_notion_sync.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/tests/test_notion_sync.py)
-- [tests/test_persona_manager.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/tests/test_persona_manager.py)
-- [tests/test_retrospective.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/tests/test_retrospective.py)
-- [tests/test_scheduler.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/tests/test_scheduler.py)
-- [tests/test_validator.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/tests/test_validator.py)
-- [tests/test_web_chat.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/tests/test_web_chat.py)
-- [web/app.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/web/app.py)
-- [web/templates/base.html](/Users/nettomello/CODIGOS/mypersonal_multiagents/web/templates/base.html)
-- [web/templates/index.html](/Users/nettomello/CODIGOS/mypersonal_multiagents/web/templates/index.html)
-- [web/templates/partials/block_row.html](/Users/nettomello/CODIGOS/mypersonal_multiagents/web/templates/partials/block_row.html)
-- [web/templates/partials/status.html](/Users/nettomello/CODIGOS/mypersonal_multiagents/web/templates/partials/status.html)
-- [web/templates/partials/task_row.html](/Users/nettomello/CODIGOS/mypersonal_multiagents/web/templates/partials/task_row.html)
-- [web/templates/tasks_page.html](/Users/nettomello/CODIGOS/mypersonal_multiagents/web/templates/tasks_page.html)
-- [docs/CONTRATO_AGENTES.md](/Users/nettomello/CODIGOS/mypersonal_multiagents/docs/CONTRATO_AGENTES.md)
-- [docs/NEXTSTEPS.md](/Users/nettomello/CODIGOS/mypersonal_multiagents/docs/NEXTSTEPS.md)
+- `config.py`
+- `Dockerfile`
+- `.devcontainer/devcontainer.json`
+- `agents/notion_sync.py`
+- `core/memory.py`
+- `core/notifier.py`
+- `sanity/schemaTypes/persona.js`
+- `tests/test_calendar_sync.py`
+- `tests/test_memory.py`
+- `tests/test_notifier_openai_utils.py`
+- `tests/test_notion_sync.py`
+- `tests/test_persona_manager.py`
+- `tests/test_retrospective.py`
+- `tests/test_scheduler.py`
+- `tests/test_validator.py`
+- `tests/test_web_chat.py`
+- `web/app.py`
+- `web/templates/base.html`
+- `web/templates/index.html`
+- `web/templates/partials/block_row.html`
+- `web/templates/partials/status.html`
+- `web/templates/partials/task_row.html`
+- `web/templates/tasks_page.html`
+- `docs/CONTRATO_AGENTES.md`
+- `docs/NEXTSTEPS.md`
+- `docs/SPRINT_VIDA.md`
 
 ### Não deve entrar no commit seguro
 
-- [.claude/settings.local.json](/Users/nettomello/CODIGOS/mypersonal_multiagents/.claude/settings.local.json)
-- [dump.rdb](/Users/nettomello/CODIGOS/mypersonal_multiagents/dump.rdb)
+- `.claude/settings.local.json`
+- `dump.rdb`
 
 Motivo:
 - arquivo local de ferramenta
@@ -118,8 +119,8 @@ Conclusão:
 
 Modelo local detectado:
 - `docker.io/ai/gemma3:4B-F16`
-- configurado em [config.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/config.py)
-- fallback implementado em [core/openai_utils.py](/Users/nettomello/CODIGOS/mypersonal_multiagents/core/openai_utils.py)
+- configurado em `config.py`
+- fallback implementado em `core/openai_utils.py`
 
 Diretriz:
 
@@ -147,18 +148,28 @@ Usos não recomendados:
 ### Fase 0. Estabilizar a base atual
 
 - [ ] Fazer commit seletivo do estado seguro
-  - Status: TODO
-  - Log:
-  - Commit: pendente
+  - Status: DONE
+  - Log: commit seguro criado com runtime, testes, docs de governança e higiene mínima de repo.
+  - Commit: `c60b547`
 
 - [ ] Fazer push do estado seguro para `main`
   - Status: TODO
-  - Log:
+  - Log: bloqueado porque `origin/main` está 4 commits à frente. Trabalho publicado em branch segura para não contaminar histórico nem forçar merge.
   - Commit: pendente
+
+- [x] Publicar branch segura com o estado consolidado
+  - Status: DONE
+  - Log: branch `neonode-codex/stabilize-runtime-governance` criada e publicada no remoto com o commit seguro.
+  - Commit: `c60b547`
 
 - [ ] Confirmar Railway estável após push
   - Status: TODO
   - Log:
+  - Commit: pendente
+
+- [ ] Fechar contrato operacional de notificações
+  - Status: IN_PROGRESS
+  - Log: diagnóstico fechado. `focus_guard` gera alerta no Railway, mas `mac_push` não funciona fora de macOS e Alexa depende de `VOICE_MONKEY_*` ou `IFTTT_*`. Observabilidade do `notifier` foi reforçada e `SPRINT_VIDA.md` reescrito para distinguir local versus Railway.
   - Commit: pendente
 
 ### Fase 1. Governança dos agentes
@@ -166,7 +177,7 @@ Usos não recomendados:
 - [x] Criar contrato recomendado, agente por agente
   - Status: DONE
   - Log: criado documento de contrato com função, entradas, saídas, memória, autoridade, riscos e ordem de formalização dos agentes.
-  - Commit: pendente
+  - Commit: `c60b547`
 
 - [ ] Revisar e aprovar contrato dos agentes
   - Status: TODO
@@ -288,3 +299,5 @@ Usos não recomendados:
 - trilha `NEXTSTEPS` criada
 - portas locais revisadas
 - papel do Gemma local explicitado
+- sugestões críticas da PR 2 endereçadas com correções de HTMX, consistência de filtros, índice reverso do Notion, teste determinístico, docs e Dockerfile
+- commit de correção da PR 2: `86c0e0f`
