@@ -28,6 +28,8 @@ export default {
           'validator',
           'retrospective',
           'life_guard',
+          'persona_manager',
+          'gemma_local',
           'ecosystem_monitor'
         ]
       },
@@ -38,7 +40,17 @@ export default {
       title: 'Tipo',
       type: 'string',
       options: {
-        list: ['routing', 'synthesis', 'direct', 'deviation', 'validation', 'retrospective', 'scheduling']
+        list: [
+          'routing',
+          'synthesis',
+          'direct',
+          'deviation',
+          'validation',
+          'retrospective',
+          'scheduling',
+          'fallback',
+          'intervention'
+        ]
       }
     },
     {
@@ -55,6 +67,18 @@ export default {
       validation: Rule => Rule.min(0).max(2)
     },
     {
+      name: 'model_hint',
+      title: 'Modelo sugerido',
+      type: 'string',
+      description: 'Ex.: gpt-4o-mini ou gemma3:4B-F16'
+    },
+    {
+      name: 'version',
+      title: 'Versão',
+      type: 'string',
+      initialValue: 'v1'
+    },
+    {
       name: 'active',
       title: 'Ativo',
       type: 'boolean',
@@ -68,6 +92,17 @@ export default {
     }
   ],
   preview: {
-    select: { title: 'name', subtitle: 'agent' }
+    select: {
+      title: 'name',
+      agent: 'agent',
+      type: 'prompt_type',
+      active: 'active'
+    },
+    prepare({ title, agent, type, active }) {
+      return {
+        title,
+        subtitle: `${agent}${type ? ` · ${type}` : ''}${active ? '' : ' · inativo'}`
+      }
+    }
   }
 }

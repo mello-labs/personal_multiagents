@@ -5,6 +5,16 @@ export default {
   description: 'Mensagens enviadas quando hiperfoco prolongado é detectado',
   fields: [
     {
+      name: 'agent_name',
+      title: 'Agente',
+      type: 'string',
+      options: {
+        list: ['focus_guard', 'life_guard', 'orchestrator']
+      },
+      initialValue: 'focus_guard',
+      validation: Rule => Rule.required()
+    },
+    {
       name: 'trigger_minutes',
       title: 'Disparar após (minutos)',
       type: 'number',
@@ -15,8 +25,24 @@ export default {
       name: 'channel',
       title: 'Canal',
       type: 'string',
-      options: { list: ['mac', 'alexa', 'mac+alexa'] },
+      options: {
+        list: ['mac', 'alexa', 'mac+alexa', 'log_only']
+      },
       validation: Rule => Rule.required()
+    },
+    {
+      name: 'environment_scope',
+      title: 'Ambiente',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Ambos', value: 'all' },
+          { title: 'Local macOS', value: 'local' },
+          { title: 'Servidor / Railway', value: 'server' }
+        ],
+        layout: 'radio'
+      },
+      initialValue: 'all'
     },
     {
       name: 'urgency',
@@ -40,8 +66,23 @@ export default {
       title: 'Mensagem',
       type: 'text',
       rows: 3,
-      description: 'Use {task} para nome da tarefa, {minutes} para tempo decorrido',
+      description: 'Use {task}, {minutes} e {planned} para interpolação',
       validation: Rule => Rule.required()
+    },
+    {
+      name: 'provider_preference',
+      title: 'Provider preferido',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Auto', value: 'auto' },
+          { title: 'Voice Monkey', value: 'voice_monkey' },
+          { title: 'IFTTT', value: 'ifttt' },
+          { title: 'Log only', value: 'log_only' }
+        ],
+        layout: 'radio'
+      },
+      initialValue: 'auto'
     },
     {
       name: 'active',
@@ -58,9 +99,17 @@ export default {
     }
   ],
   preview: {
-    select: { title: 'trigger_minutes', subtitle: 'channel' },
-    prepare({ title, subtitle }) {
-      return { title: `${title} min`, subtitle }
+    select: {
+      agent: 'agent_name',
+      minutes: 'trigger_minutes',
+      channel: 'channel',
+      scope: 'environment_scope'
+    },
+    prepare({ agent, minutes, channel, scope }) {
+      return {
+        title: `${agent || 'agent'} · ${minutes} min`,
+        subtitle: `${channel}${scope ? ` · ${scope}` : ''}`
+      }
     }
   }
 }

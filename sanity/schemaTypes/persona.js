@@ -27,6 +27,12 @@ export default {
       type: 'text'
     },
     {
+      name: 'role',
+      title: 'Papel',
+      type: 'string',
+      description: 'Ex.: arquiteto, coordenador, auditor, fallback local'
+    },
+    {
       name: 'tone',
       title: 'Tom',
       type: 'string',
@@ -43,11 +49,24 @@ export default {
       }
     },
     {
+      name: 'style_rules',
+      title: 'Regras de estilo',
+      type: 'array',
+      of: [{ type: 'string' }],
+      description: 'Regras curtas e atômicas de linguagem'
+    },
+    {
       name: 'system_prompt',
       title: 'System Prompt base',
       type: 'text',
       rows: 20,
       validation: Rule => Rule.required()
+    },
+    {
+      name: 'preferred_model',
+      title: 'Modelo preferido',
+      type: 'string',
+      description: 'Ex.: gpt-4o-mini ou gemma3:4B-F16'
     },
     {
       name: 'temperature_routing',
@@ -69,6 +88,16 @@ export default {
     }
   ],
   preview: {
-    select: {title: 'name', subtitle: 'tone'}
+    select: {
+      title: 'name',
+      tone: 'tone',
+      role: 'role'
+    },
+    prepare({ title, tone, role }) {
+      return {
+        title,
+        subtitle: role ? `${role} · ${tone || 'sem tom'}` : tone
+      }
+    }
   }
 }
