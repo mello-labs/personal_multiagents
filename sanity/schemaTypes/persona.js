@@ -13,7 +13,7 @@ export default {
       name: 'persona_id',
       title: 'ID',
       type: 'slug',
-      options: { source: 'name' },
+      options: {source: 'name'},
       validation: Rule => Rule.required()
     },
     {
@@ -24,23 +24,49 @@ export default {
     {
       name: 'description',
       title: 'Descrição',
-      type: 'text',
-      rows: 3
+      type: 'text'
+    },
+    {
+      name: 'role',
+      title: 'Papel',
+      type: 'string',
+      description: 'Ex.: arquiteto, coordenador, auditor, fallback local'
     },
     {
       name: 'tone',
       title: 'Tom',
       type: 'string',
       options: {
-        list: ['warm', 'professional', 'direct', 'casual', 'technical', 'strategic']
+        list: [
+          {title: 'Warm', value: 'warm'},
+          {title: 'Professional', value: 'professional'},
+          {title: 'Direct', value: 'direct'},
+          {title: 'Casual', value: 'casual'},
+          {title: 'Technical', value: 'technical'},
+          {title: 'Strategic', value: 'strategic'}
+        ],
+        layout: 'radio'
       }
+    },
+    {
+      name: 'style_rules',
+      title: 'Regras de estilo',
+      type: 'array',
+      of: [{ type: 'string' }],
+      description: 'Regras curtas e atômicas de linguagem'
     },
     {
       name: 'system_prompt',
       title: 'System Prompt base',
       type: 'text',
-      rows: 15,
+      rows: 20,
       validation: Rule => Rule.required()
+    },
+    {
+      name: 'preferred_model',
+      title: 'Modelo preferido',
+      type: 'string',
+      description: 'Ex.: gpt-4o-mini ou gemma3:4B-F16'
     },
     {
       name: 'temperature_routing',
@@ -62,6 +88,16 @@ export default {
     }
   ],
   preview: {
-    select: { title: 'name', subtitle: 'short_name' }
+    select: {
+      title: 'name',
+      tone: 'tone',
+      role: 'role'
+    },
+    prepare({ title, tone, role }) {
+      return {
+        title,
+        subtitle: role ? `${role} · ${tone || 'sem tom'}` : tone
+      }
+    }
   }
 }
