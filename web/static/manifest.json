@@ -1,7 +1,7 @@
 {
   "name": "Multiagentes",
   "short_name": "Agentes",
-  "description": "Sistema multiagentes - gestao de tarefas, agenda e foco",
+  "description": "Gate with nodes multiagents to archtect NEØ",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

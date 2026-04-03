@@ -25,7 +25,14 @@ from typing import Optional
 # Garante que o diretório raiz está no sys.path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from agents import focus_guard, life_guard, notion_sync, orchestrator, scheduler, validator
+from agents import (
+    focus_guard,
+    life_guard,
+    notion_sync,
+    orchestrator,
+    scheduler,
+    validator,
+)
 from config import validate_config
 from core import memory, notifier
 
@@ -486,9 +493,16 @@ def cmd_vida() -> None:
     """Exibe status das rotinas pessoais do dia e dispara checks."""
     notifier.separator("LIFE GUARD — ROTINAS DO DIA")
     result = life_guard.run_all_checks()
-    notifier.info(f"Rotinas disparadas: {result['routines'] or 'nenhuma pendente'}", "life_guard")
-    notifier.info(f"Hidratação: {'lembrete enviado' if result['hydration'] else 'ok'}", "life_guard")
-    notifier.info(f"Financas alertadas: {result['finances'] or 'nenhuma vencendo'}", "life_guard")
+    notifier.info(
+        f"Rotinas disparadas: {result['routines'] or 'nenhuma pendente'}", "life_guard"
+    )
+    notifier.info(
+        f"Hidratação: {'lembrete enviado' if result['hydration'] else 'ok'}",
+        "life_guard",
+    )
+    notifier.info(
+        f"Financas alertadas: {result['finances'] or 'nenhuma vencendo'}", "life_guard"
+    )
     notifier.separator()
 
 
@@ -496,28 +510,37 @@ def cmd_pagar(args_str: str) -> None:
     """Registra uma conta a pagar. Uso: pagar <nome> dia <N> valor <V>"""
     # ex: "Cartao XP dia 15 valor 1200"
     import re
+
     match = re.match(r"(.+?)\s+dia\s+(\d+)\s+valor\s+([\d.,]+)", args_str.strip())
     if not match:
-        notifier.error("Formato: pagar <nome> dia <N> valor <V>  (ex: pagar Cartao XP dia 15 valor 1200)", "life_guard")
+        notifier.error(
+            "Formato: pagar <nome> dia <N> valor <V>  (ex: pagar Cartao XP dia 15 valor 1200)",
+            "life_guard",
+        )
         return
     name = match.group(1).strip()
     due_day = int(match.group(2))
     amount = float(match.group(3).replace(",", "."))
     result = life_guard.add_finance(name, due_day, amount)
-    notifier.success(f"Registrado: {name} — vence dia {due_day} — R$ {amount:.2f}", "life_guard")
+    notifier.success(
+        f"Registrado: {name} — vence dia {due_day} — R$ {amount:.2f}", "life_guard"
+    )
 
 
 def cmd_fiz(rotina: str) -> None:
     """Confirma que uma rotina foi feita. Uso: fiz <exercicio|banho|almoco|jantar>"""
     routine_map = {
         "exercicio": "exercise",
-        "banho":     "shower",
-        "almoco":    "lunch",
-        "jantar":    "dinner",
+        "banho": "shower",
+        "almoco": "lunch",
+        "jantar": "dinner",
     }
     routine_id = routine_map.get(rotina.strip().lower())
     if not routine_id:
-        notifier.error(f"Rotina desconhecida: '{rotina}'. Opcoes: {', '.join(routine_map)}", "life_guard")
+        notifier.error(
+            f"Rotina desconhecida: '{rotina}'. Opcoes: {', '.join(routine_map)}",
+            "life_guard",
+        )
         return
     result = life_guard.confirm_routine(routine_id)
     notifier.success(f"Rotina '{rotina}' confirmada para hoje.", "life_guard")
@@ -531,6 +554,7 @@ def cmd_fiz(rotina: str) -> None:
 def cmd_retrospective() -> None:
     """Gera a retrospectiva semanal."""
     from agents import retrospective as retro
+
     notifier.separator("RETROSPECTIVA SEMANAL")
 
     push = input("  Criar página no Notion? [s/N]: ").strip().lower() == "s"
@@ -549,7 +573,9 @@ def cmd_retrospective() -> None:
 def cmd_web() -> None:
     """Inicia a interface web."""
     import uvicorn
+
     from config import WEB_HOST, WEB_PORT
+
     notifier.info(f"Iniciando interface web em http://{WEB_HOST}:{WEB_PORT}", "web")
     uvicorn.run("web.app:app", host=WEB_HOST, port=WEB_PORT, reload=False)
 
@@ -557,10 +583,16 @@ def cmd_web() -> None:
 def cmd_calendar_auth() -> None:
     """Autoriza a integração opcional com Google Calendar."""
     from agents import calendar_sync
-    notifier.info("Iniciando fluxo de autorização da integração opcional com Google Calendar...", "calendar")
+
+    notifier.info(
+        "Iniciando fluxo de autorização da integração opcional com Google Calendar...",
+        "calendar",
+    )
     notifier.info("O browser será aberto para autorização.", "calendar")
     if calendar_sync.authorize():
-        notifier.success("Autorização concluída! Use 'calendar import' para importar eventos.")
+        notifier.success(
+            "Autorização concluída! Use 'calendar import' para importar eventos."
+        )
     else:
         notifier.error("Autorização falhou. Verifique o credentials.json.")
 
@@ -568,6 +600,7 @@ def cmd_calendar_auth() -> None:
 def cmd_calendar_import() -> None:
     """Importa eventos de hoje da integração opcional com Google Calendar."""
     from agents import calendar_sync
+
     count = calendar_sync.import_today_as_blocks()
     notifier.success(f"{count} evento(s) importados como blocos de agenda.")
 
@@ -575,6 +608,7 @@ def cmd_calendar_import() -> None:
 def cmd_calendar_status() -> None:
     """Status da integração opcional com o Google Calendar."""
     from agents import calendar_sync
+
     notifier.separator("GOOGLE CALENDAR STATUS")
     notifier.info(f"Autorizado: {calendar_sync.is_authorized()}", "calendar")
     notifier.info(f"Calendário: {calendar_sync.GOOGLE_CALENDAR_ID}", "calendar")
@@ -594,7 +628,7 @@ def cmd_calendar_status() -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="multiagentes",
-        description="Sistema de Multiagentes para Gestão Pessoal",
+        description="Gate with nodes multiagents to archtect NEØ",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Exemplos:
@@ -661,20 +695,30 @@ Exemplos:
     subparsers.add_parser("vida", help="Status das rotinas pessoais do dia")
     subparsers.add_parser("life", help="Status das rotinas pessoais do dia (alias)")
 
-    pagar_parser = subparsers.add_parser("pagar", help="Registra conta a pagar (ex: pagar Cartao XP dia 15 valor 1200)")
+    pagar_parser = subparsers.add_parser(
+        "pagar", help="Registra conta a pagar (ex: pagar Cartao XP dia 15 valor 1200)"
+    )
     pagar_parser.add_argument("args", nargs=argparse.REMAINDER)
 
-    fiz_parser = subparsers.add_parser("fiz", help="Confirma rotina feita (ex: fiz banho)")
+    fiz_parser = subparsers.add_parser(
+        "fiz", help="Confirma rotina feita (ex: fiz banho)"
+    )
     fiz_parser.add_argument("rotina", nargs="?", default="")
 
     # ecosistema
-    subparsers.add_parser("ecosistema", help="Health check e relatório do ecossistema externo")
+    subparsers.add_parser(
+        "ecosistema", help="Health check e relatório do ecossistema externo"
+    )
 
     # calendar
-    calendar_parser = subparsers.add_parser("calendar", help="Gerencia integração opcional com Google Calendar")
+    calendar_parser = subparsers.add_parser(
+        "calendar", help="Gerencia integração opcional com Google Calendar"
+    )
     cal_sub = calendar_parser.add_subparsers(dest="calendar_action", metavar="AÇÃO")
-    cal_sub.add_parser("auth",   help="Autoriza acesso opcional ao Google Calendar")
-    cal_sub.add_parser("import", help="Importa eventos opcionais de hoje como blocos de agenda")
+    cal_sub.add_parser("auth", help="Autoriza acesso opcional ao Google Calendar")
+    cal_sub.add_parser(
+        "import", help="Importa eventos opcionais de hoje como blocos de agenda"
+    )
     cal_sub.add_parser("status", help="Status da integração opcional com o Calendar")
 
     return parser
@@ -727,6 +771,7 @@ def main() -> None:
         cmd_web()
     elif command == "ecosistema":
         from agents import ecosystem_monitor
+
         report = ecosystem_monitor.run()
         print(report)
     elif command in ("vida", "life"):

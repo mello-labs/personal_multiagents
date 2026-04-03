@@ -8,9 +8,8 @@
 
 ![multiagentes banner](./docs/assets/multiagentes-banner.svg)
 
-Sistema multiagentes para gestão pessoal
-com orquestração por IA, agenda local
-persistida em Redis, sync com Notion
+Portal providing access to the multi-agent nodes
+that serve the NEØ architect.
 como origem principal, Google Calendar
 como capacidade opcional, Sanity.io
 e monitoramento autônomo de foco.
@@ -31,7 +30,7 @@ execução, validação e memória.
 
 ```text
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ MULTIAGENTES CAPABILITIES           ┃
+┃ MULTIAGENTES CAPABILITIES            ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃
 ┃ Orchestrator
@@ -449,8 +448,8 @@ make test-cov
 
 ## Authorship
 
-- **Architecture & Lead:** NEO MELLO
-- **Project Type:** sistema pessoal multiagentes para operação, foco e agenda
+- **Architecture & Lead:** NEØ MELLO
+- **Project Type:** Gate to access nodes multiagents // Ø
 - **Direction:** transformar tarefas em sistema observável, reagente e persistente
 
 ────────────────────────────────────────
