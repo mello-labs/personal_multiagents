@@ -30,6 +30,16 @@ class Color:
     GRAY = "\033[90m"
 
 
+_IS_RAILWAY = bool(
+    os.getenv("RAILWAY_ENVIRONMENT")
+    or os.getenv("RAILWAY_PROJECT_ID")
+    or os.getenv("RAILWAY_SERVICE_ID")
+)
+_FORCE_COLOR = os.getenv("FORCE_COLOR", "").lower() in {"1", "true", "yes"}
+_NO_COLOR = os.getenv("NO_COLOR") is not None
+_USE_COLOR = _FORCE_COLOR or (sys.stdout.isatty() and not _NO_COLOR and not _IS_RAILWAY)
+
+
 # ---------------------------------------------------------------------------
 # Configuração do logger Python padrão
 # ---------------------------------------------------------------------------
@@ -49,14 +59,8 @@ def _setup_logger() -> logging.Logger:
         logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
     )
 
-    # Handler de console (com cores aplicadas manualmente)
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(
-        logging.Formatter("%(message)s")
-    )  # já formatado abaixo
-
     logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
+    logger.propagate = False
     return logger
 
 
@@ -85,6 +89,15 @@ _LEVEL_STYLE: dict[NotifLevel, tuple[str, str]] = {
     NotifLevel.AGENT: (Color.BLUE, "🤖"),
 }
 
+_LEVEL_PLAIN_ICON: dict[NotifLevel, str] = {
+    NotifLevel.INFO: "i",
+    NotifLevel.SUCCESS: "ok",
+    NotifLevel.WARNING: "warn",
+    NotifLevel.ERROR: "err",
+    NotifLevel.FOCUS: "focus",
+    NotifLevel.AGENT: "agent",
+}
+
 
 # ---------------------------------------------------------------------------
 # Função principal de notificação
@@ -107,13 +120,16 @@ def notify(
     color, icon = _LEVEL_STYLE.get(level, (Color.WHITE, "•"))
     timestamp = datetime.now().strftime("%H:%M:%S")
 
-    # Linha formatada para o terminal
-    terminal_line = (
-        f"{Color.GRAY}[{timestamp}]{Color.RESET} "
-        f"{color}{Color.BOLD}{icon} [{level.value}]{Color.RESET} "
-        f"{Color.GRAY}({agent}){Color.RESET} "
-        f"{color}{message}{Color.RESET}"
-    )
+    if _USE_COLOR:
+        terminal_line = (
+            f"{Color.GRAY}[{timestamp}]{Color.RESET} "
+            f"{color}{Color.BOLD}{icon} [{level.value}]{Color.RESET} "
+            f"{Color.GRAY}({agent}){Color.RESET} "
+            f"{color}{message}{Color.RESET}"
+        )
+    else:
+        plain_icon = _LEVEL_PLAIN_ICON.get(level, "log")
+        terminal_line = f"[{timestamp}] [{plain_icon.upper()}] ({agent}) {message}"
 
     # Imprime diretamente (sem o logging.StreamHandler duplicar)
     print(terminal_line, flush=True)
@@ -236,7 +252,10 @@ def separator(title: str = "", char: str = "─", width: int = 70) -> None:
         line = f"{char * side} {title} {char * (width - side - len(title) - 2)}"
     else:
         line = char * width
-    print(f"{Color.GRAY}{line}{Color.RESET}", flush=True)
+    if _USE_COLOR:
+        print(f"{Color.GRAY}{line}{Color.RESET}", flush=True)
+    else:
+        print(line, flush=True)
 
 
 def banner() -> None:

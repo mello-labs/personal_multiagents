@@ -35,10 +35,30 @@ AGENT_NAME = "focus_guard"
 
 # Níveis de escalada por tempo de sessão
 ESCALATION_LEVELS = [
-    {"minutes": 30,  "channel": "mac",       "sound": False, "msg": "30 min em {task}. Planejado: {planned}min."},
-    {"minutes": 60,  "channel": "mac",       "sound": True,  "msg": "1 hora em {task}. Hora de checar."},
-    {"minutes": 120, "channel": "mac+alexa", "sound": True,  "msg": "2 horas em {task}. Para agora."},
-    {"minutes": 240, "channel": "mac+alexa", "sound": True,  "msg": "4 horas. Sai do computador por 10 minutos."},
+    {
+        "minutes": 30,
+        "channel": "mac",
+        "sound": False,
+        "msg": "30 min em {task}. Planejado: {planned}min.",
+    },
+    {
+        "minutes": 60,
+        "channel": "mac",
+        "sound": True,
+        "msg": "1 hora em {task}. Hora de checar.",
+    },
+    {
+        "minutes": 120,
+        "channel": "mac+alexa",
+        "sound": True,
+        "msg": "2 horas em {task}. Para agora.",
+    },
+    {
+        "minutes": 240,
+        "channel": "mac+alexa",
+        "sound": True,
+        "msg": "4 horas. Sai do computador por 10 minutos.",
+    },
 ]
 
 # Estado interno do Focus Guard
@@ -63,8 +83,11 @@ Retorne JSON com:
 }
 """
 
+
 def _get_deviation_prompt() -> str:
-    return sanity_client.get_prompt("focus_guard", "deviation", _DEVIATION_PROMPT_FALLBACK)
+    return sanity_client.get_prompt(
+        "focus_guard", "deviation", _DEVIATION_PROMPT_FALLBACK
+    )
 
 
 def _get_runtime_environment() -> str:
@@ -198,7 +221,9 @@ def analyze_with_llm(progress: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _check_escalation(session_minutes: int, task_title: str, planned_minutes: int) -> None:
+def _check_escalation(
+    session_minutes: int, task_title: str, planned_minutes: int
+) -> None:
     """Dispara notificação no canal certo baseado no tempo de sessão."""
     today = datetime.now().date()
     for level in _get_intervention_levels():
@@ -208,7 +233,9 @@ def _check_escalation(session_minutes: int, task_title: str, planned_minutes: in
         if session_minutes >= level["minutes"]:
             msg = level["msg"].format(task=task_title, planned=planned_minutes)
             if "mac" in level["channel"]:
-                notifier.mac_push(level.get("title", "NEO Focus Guard"), msg, sound=level["sound"])
+                notifier.mac_push(
+                    level.get("title", "NEO Focus Guard"), msg, sound=level["sound"]
+                )
             if "alexa" in level["channel"]:
                 notifier.alexa_announce(msg)
             memory.set_state(state_key, "sent")
@@ -384,6 +411,7 @@ def _run_focus_check(
     # Life Guard — rotinas pessoais
     try:
         from agents import life_guard as _life_guard
+
         _life_guard.run_all_checks()
     except Exception as e:
         notifier.warning(f"Life Guard check ignorado: {e}", AGENT_NAME)
@@ -404,11 +432,6 @@ def _run_differential_sync() -> None:
 
 def _background_loop() -> None:
     """Thread principal do Focus Guard — roda o scheduler.run_pending() em loop."""
-    notifier.agent_event(
-        f"Focus Guard iniciado (verificação a cada {FOCUS_CHECK_INTERVAL_MINUTES} min).",
-        AGENT_NAME,
-    )
-
     # Configura o job periódico de check de foco
     schedule.every(FOCUS_CHECK_INTERVAL_MINUTES).minutes.do(_run_focus_check)
 
@@ -452,7 +475,10 @@ def start_guard() -> None:
         daemon=True,
     )
     _guard_thread.start()
-    notifier.success("Focus Guard iniciado em background.", AGENT_NAME)
+    notifier.success(
+        f"Focus Guard em background (check a cada {FOCUS_CHECK_INTERVAL_MINUTES} min).",
+        AGENT_NAME,
+    )
 
 
 def stop_guard() -> None:

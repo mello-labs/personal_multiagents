@@ -160,8 +160,7 @@ def _to_dict(data: dict, int_fields: list[str] | None = None) -> dict:
 def init_db() -> None:
     """Verifica conexão Redis. Substitui o init_db() do SQLite."""
     try:
-        _r().ping()
-        print(f"[Memory] Redis conectado: {REDIS_URL}")
+        _r()
     except Exception as e:
         print(
             f"[Memory] AVISO: Redis indisponível ({e}). Tentativas serão feitas sob demanda."
@@ -339,7 +338,9 @@ def create_agenda_block(
             f"blocks:date:{block_date}", {str(block_id): _ts_from_timeslot(time_slot)}
         )
         if task_id is not None:
-            r.zadd(f"blocks:task:{task_id}", {str(block_id): _ts_from_timeslot(time_slot)})
+            r.zadd(
+                f"blocks:task:{task_id}", {str(block_id): _ts_from_timeslot(time_slot)}
+            )
         if notion_page_id:
             r.set(f"blocks:notion:{notion_page_id}", block_id)
         return block_id
