@@ -298,6 +298,34 @@ info: ## Exibe info do ambiente
 	@echo "  $(BOLD)Último commit:$(RESET) $$(git log --oneline -1)"
 	@echo ""
 
+.PHONY: docker-df
+docker-df: ## Exibe consumo de disco do Docker
+	@docker system df
+
+.PHONY: docker-maintenance
+docker-maintenance: ## Limpeza focada em build cache (agressiva)
+	@bash scripts/docker_maintenance.sh build
+
+.PHONY: docker-maintenance-safe
+docker-maintenance-safe: ## Limpeza conservadora (cache + dangling images)
+	@bash scripts/docker_maintenance.sh safe
+
+.PHONY: docker-maintenance-deep
+docker-maintenance-deep: ## Limpeza ampla (cache + imagens sem uso)
+	@bash scripts/docker_maintenance.sh deep
+
+.PHONY: docker-maintenance-install
+docker-maintenance-install: ## Agenda limpeza semanal via launchd (dom 04:10)
+	@bash scripts/install_docker_maintenance_launchd.sh
+
+.PHONY: docker-maintenance-uninstall
+docker-maintenance-uninstall: ## Remove agendamento launchd de manutenção Docker
+	@bash scripts/install_docker_maintenance_launchd.sh --uninstall
+
+.PHONY: docker-maintenance-status
+docker-maintenance-status: ## Mostra status do agendamento no launchd
+	@launchctl list | grep docker-maintenance || echo "Agendamento não encontrado."
+
 .PHONY: clean
 clean: ## Remove cache Python e arquivos temporários
 	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
