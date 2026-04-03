@@ -1,7 +1,7 @@
 # NEXTSTEPS
 
 Status: ativo  
-Última atualização: 2026-04-02
+Última atualização: 2026-04-03
 
 ## Como este documento deve ser usado
 
@@ -147,24 +147,24 @@ Usos não recomendados:
 
 ### Fase 0. Estabilizar a base atual
 
-- [ ] Fazer commit seletivo do estado seguro
+- [x] Fazer commit seletivo do estado seguro
   - Status: DONE
   - Log: commit seguro criado com runtime, testes, docs de governança e higiene mínima de repo.
   - Commit: `c60b547`
 
-- [ ] Fazer push do estado seguro para `main`
-  - Status: TODO
-  - Log: bloqueado porque `origin/main` está 4 commits à frente. Trabalho publicado em branch segura para não contaminar histórico nem forçar merge.
-  - Commit: pendente
+- [x] Fazer push do estado seguro para `main`
+  - Status: DONE
+  - Log: branch intermediária foi consolidada, `main` foi limpo e os avanços relevantes voltaram para a linha principal do repositório.
+  - Commit: `b60190d`
 
 - [x] Publicar branch segura com o estado consolidado
   - Status: DONE
   - Log: branch `neonode-codex/stabilize-runtime-governance` criada e publicada no remoto com o commit seguro.
   - Commit: `c60b547`
 
-- [ ] Confirmar Railway estável após push
-  - Status: TODO
-  - Log:
+- [x] Confirmar Railway estável após push
+  - Status: DONE
+  - Log: health check respondeu `db: ok`, sync com Notion trouxe tarefa real e a interface no Railway refletiu agenda e tarefa sincronizadas.
   - Commit: pendente
 
 - [ ] Fechar contrato operacional de notificações
@@ -179,14 +179,14 @@ Usos não recomendados:
   - Log: criado documento de contrato com função, entradas, saídas, memória, autoridade, riscos e ordem de formalização dos agentes.
   - Commit: `c60b547`
 
-- [ ] Revisar e aprovar contrato dos agentes
-  - Status: TODO
-  - Log:
+- [x] Revisar e aprovar contrato dos agentes
+  - Status: DONE
+  - Log: contrato lido, tensionado e validado como base da governança dos agentes, com separação clara entre kernel íntimo e camadas futuras.
   - Commit: pendente
 
-- [ ] Identificar quais prompts deixam de ser hardcoded e passam a ser governados pelo Sanity
-  - Status: TODO
-  - Log:
+- [x] Identificar quais prompts deixam de ser hardcoded e passam a ser governados pelo Sanity
+  - Status: DONE
+  - Log: mapeados os agentes com dependência real de LLM e os pontos onde a autoridade ainda está dividida entre código e Studio.
   - Commit: pendente
 
 ### Fase 2. Sanity v2
@@ -231,19 +231,19 @@ Usos não recomendados:
   - Log:
   - Commit: pendente
 
-- [ ] Definir schema de domínio `signal`
-  - Status: TODO
-  - Log:
+- [x] Definir schema de domínio `signal`
+  - Status: DONE
+  - Log: schema mínimo documentado em `docs/SCHEMA_SIGNAL_DECISION.md` como base da órbita externa do kernel e pré-condição do `ecosystem_monitor`.
   - Commit: pendente
 
-- [ ] Definir schema de domínio `decision`
-  - Status: TODO
-  - Log:
+- [x] Definir schema de domínio `source`
+  - Status: DONE
+  - Log: schema mínimo documentado em `docs/SCHEMA_SIGNAL_DECISION.md` para distinguir origem estrutural de evento e preparar reconciliação entre fontes.
   - Commit: pendente
 
-- [ ] Definir schema de domínio `source`
-  - Status: TODO
-  - Log:
+- [x] Definir schema de domínio `decision`
+  - Status: DONE
+  - Log: schema mínimo documentado em `docs/SCHEMA_SIGNAL_DECISION.md` para consolidar sinais relevantes em resposta governável.
   - Commit: pendente
 
 - [ ] Definir schema de domínio `public_artifact`
@@ -254,6 +254,33 @@ Usos não recomendados:
 ### Fase 3. Fronteira privado -> público
 
 - [ ] Desenhar o contrato da aba `Publish` no front privado
+  - Status: TODO
+  - Log:
+  - Commit: pendente
+
+### Fase 4. Órbita externa do kernel
+
+- [x] Versionar configuração do ecossistema
+  - Status: DONE
+  - Log: criado `config/ecosystem.yml` com orgs, fontes, modo `pull_first`, TTL e política de publicação externa.
+  - Commit: pendente
+
+- [x] Definir thresholds explícitos do monitor externo
+  - Status: DONE
+  - Log: criado `config/alert_thresholds.yml` com limiares para GitHub, Railway, Vercel, Cloudflare e NEOFLW.
+  - Commit: pendente
+
+- [x] Reposicionar `SPRINT_ECOSSISTEMA` como camada externa do kernel
+  - Status: DONE
+  - Log: sprint reescrito para separar sinais do ecossistema da camada íntima e impedir acoplamento com `focus_guard`.
+  - Commit: pendente
+
+- [ ] Implementar Fase 1 do `ecosystem_monitor`
+  - Status: TODO
+  - Log:
+  - Commit: pendente
+
+- [ ] Definir gate automatizado para desbloquear Fase 2 do monitor
   - Status: TODO
   - Log:
   - Commit: pendente
@@ -301,3 +328,12 @@ Usos não recomendados:
 - papel do Gemma local explicitado
 - sugestões críticas da PR 2 endereçadas com correções de HTMX, consistência de filtros, índice reverso do Notion, teste determinístico, docs e Dockerfile
 - commit de correção da PR 2: `86c0e0f`
+
+### 2026-04-03
+
+- `SPRINT_ECOSSISTEMA` reposicionado como órbita externa do kernel
+- criado `PLANO_SOBERANIA_SANITY.md`
+- criado `SCHEMA_SIGNAL_DECISION.md`
+- criado `config/ecosystem.yml`
+- criado `config/alert_thresholds.yml`
+- trilhas do plano, sprint e next steps foram amarradas

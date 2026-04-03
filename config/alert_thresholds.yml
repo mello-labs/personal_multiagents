@@ -1,0 +1,29 @@
+version: 1
+description: Alert thresholds for external ecosystem monitoring
+
+github:
+  no_activity_hours_active_repo: 72
+  issue_backlog_warn_count: 20
+
+railway:
+  service_down_minutes: 5
+  deployment_failure_consecutive: 2
+
+vercel:
+  deployment_failure_consecutive: 2
+  no_deploy_days_warn: 28
+
+cloudflare:
+  http_5xx_warn_count: 5
+  http_5xx_fail_count: 20
+
+onchain:
+  neoflw_price_drop_pct: 15
+  neoflw_liquidity_usd_min: 1000
+  neoflw_volume_24h_usd_min: 500
+
+reporting:
+  push_only_for_severity:
+    - fail
+    - critical
+  daily_report_default_delivery: pull

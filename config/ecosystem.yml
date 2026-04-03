@@ -1,0 +1,46 @@
+version: 1
+description: External ecosystem monitor configuration
+
+runtime:
+  report_mode: pull_first
+  health_check_interval_minutes: 30
+  daily_report_hour_local: "20:00"
+  redis_signal_ttl_hours: 24
+
+github:
+  enabled: true
+  orgs:
+    - NEO-PROTOCOL
+    - NEO-FlowOFF
+    - flowpay-system
+    - neo-smart-factory
+    - FluxxDAO
+    - wodxpro
+  repos_per_org_limit: 15
+  commit_window_hours: 24
+  staleness_threshold_hours: 72
+
+railway:
+  enabled: true
+  environments:
+    - production
+
+vercel:
+  enabled: false
+  projects: []
+
+cloudflare:
+  enabled: false
+  zones: []
+
+onchain:
+  enabled: true
+  assets:
+    - name: NEOFLW
+      provider: dexscreener
+      chain: base
+      contract: "0x41F4ff3d45DED9C1332e4908F637B75fe83F5d6B"
+
+publish:
+  allow_public_artifacts: false
+  require_human_review: true
