@@ -1,6 +1,16 @@
 # SANITY.IO — Schema e Integração
 
-**Status:** Parcialmente implementado (30/03/2026)
+> **HISTÓRICO — documento desatualizado.**
+> Este arquivo registra o planejamento inicial dos 4 schemas originais (2026-03-30).
+> O projeto evoluiu: hoje há 13 schemas deployed em `n4dgl02q/production`.
+>
+> Documentos atuais:
+> - Schemas locais: `sanity/schemaTypes/` (13 tipos)
+> - Governança: `PLANO_SOBERANIA_SANITY.md`
+> - Cobertura por agente: `MATRIZ_GOVERNANCA_AGENTES.md`
+> - Contratos: `CONTRATO_AGENTES.md`
+
+**Status:** HISTÓRICO — superado pela Fase 2 do Sanity (concluída em 2026-04-03, commit `679f390`)
 **Projeto Sanity:** `n4dgl02q` (criado em sanity.io/manage)
 **Dataset:** `production`
 **Propósito:** externalizar prompts, personas e configs — sem redeploy para ajustes

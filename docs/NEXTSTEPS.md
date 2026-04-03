@@ -169,7 +169,7 @@ Usos não recomendados:
 
 - [ ] Fechar contrato operacional de notificações
   - Status: IN_PROGRESS
-  - Log: diagnóstico fechado. `focus_guard` gera alerta no Railway, mas `mac_push` não funciona fora de macOS e Alexa depende de `VOICE_MONKEY_*` ou `IFTTT_*`. Observabilidade do `notifier` foi reforçada e `SPRINT_VIDA.md` reescrito para distinguir local versus Railway.
+  - Log: diagnóstico fechado. `focus_guard` gera alerta no Railway, mas `mac_push` não funciona fora de macOS e Alexa depende de `VOICE_MONKEY_*`. Observabilidade do `notifier` foi reforçada e `SPRINT_VIDA.md` reescrito para distinguir local versus Railway.
   - Commit: pendente
 
 ### Fase 1. Governança dos agentes

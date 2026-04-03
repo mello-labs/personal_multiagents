@@ -15,19 +15,19 @@ from config import LOG_FILE, LOG_LEVEL
 
 
 # ---------------------------------------------------------------------------
-# Cores ANSI para terminal (funciona em Linux/macOS; desative no Windows antigo)
+# Cores ANSI para terminal (Linux/macOS; desative no Windows antigo)
 # ---------------------------------------------------------------------------
 class Color:
-    RESET   = "\033[0m"
-    BOLD    = "\033[1m"
-    RED     = "\033[91m"
-    GREEN   = "\033[92m"
-    YELLOW  = "\033[93m"
-    BLUE    = "\033[94m"
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
     MAGENTA = "\033[95m"
-    CYAN    = "\033[96m"
-    WHITE   = "\033[97m"
-    GRAY    = "\033[90m"
+    CYAN = "\033[96m"
+    WHITE = "\033[97m"
+    GRAY = "\033[90m"
 
 
 # ---------------------------------------------------------------------------
@@ -51,7 +51,9 @@ def _setup_logger() -> logging.Logger:
 
     # Handler de console (com cores aplicadas manualmente)
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(logging.Formatter("%(message)s"))  # já formatado abaixo
+    console_handler.setFormatter(
+        logging.Formatter("%(message)s")
+    )  # já formatado abaixo
 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
@@ -65,22 +67,22 @@ _logger = _setup_logger()
 # Tipos de notificação
 # ---------------------------------------------------------------------------
 class NotifLevel(str, Enum):
-    INFO    = "INFO"
+    INFO = "INFO"
     SUCCESS = "SUCCESS"
     WARNING = "WARNING"
-    ERROR   = "ERROR"
-    FOCUS   = "FOCUS"      # Alertas do Focus Guard
-    AGENT   = "AGENT"      # Comunicação entre agentes
+    ERROR = "ERROR"
+    FOCUS = "FOCUS"  # Alertas do Focus Guard
+    AGENT = "AGENT"  # Comunicação entre agentes
 
 
 # Mapeamento nível → cor + ícone
 _LEVEL_STYLE: dict[NotifLevel, tuple[str, str]] = {
-    NotifLevel.INFO:    (Color.CYAN,    "ℹ"),
-    NotifLevel.SUCCESS: (Color.GREEN,   "✓"),
-    NotifLevel.WARNING: (Color.YELLOW,  "⚠"),
-    NotifLevel.ERROR:   (Color.RED,     "✗"),
-    NotifLevel.FOCUS:   (Color.MAGENTA, "🎯"),
-    NotifLevel.AGENT:   (Color.BLUE,    "🤖"),
+    NotifLevel.INFO: (Color.CYAN, "ℹ"),
+    NotifLevel.SUCCESS: (Color.GREEN, "✓"),
+    NotifLevel.WARNING: (Color.YELLOW, "⚠"),
+    NotifLevel.ERROR: (Color.RED, "✗"),
+    NotifLevel.FOCUS: (Color.MAGENTA, "🎯"),
+    NotifLevel.AGENT: (Color.BLUE, "🤖"),
 }
 
 
@@ -133,17 +135,22 @@ def notify(
 def info(message: str, agent: str = "system") -> None:
     notify(message, NotifLevel.INFO, agent)
 
+
 def success(message: str, agent: str = "system") -> None:
     notify(message, NotifLevel.SUCCESS, agent)
+
 
 def warning(message: str, agent: str = "system") -> None:
     notify(message, NotifLevel.WARNING, agent)
 
+
 def error(message: str, agent: str = "system") -> None:
     notify(message, NotifLevel.ERROR, agent)
 
+
 def focus_alert(message: str, agent: str = "focus_guard") -> None:
     notify(message, NotifLevel.FOCUS, agent)
+
 
 def agent_event(message: str, agent: str = "orchestrator") -> None:
     notify(message, NotifLevel.AGENT, agent)
@@ -157,11 +164,17 @@ def mac_push(title: str, message: str, sound: bool = False) -> None:
     import subprocess
 
     if sys.platform != "darwin":
-        warning("mac_push ignorado: notificações nativas só funcionam em macOS.", "notifier")
+        warning(
+            "mac_push ignorado: notificações nativas só funcionam em macOS.",
+            "notifier",
+        )
         return
 
     sound_line = ' sound name "Sosumi"' if sound else ""
-    script = f'display notification "{message}" with title "{title}"{sound_line}'
+    script = (
+        f'display notification "{message}" '
+        f'with title "{title}"{sound_line}'
+    )
     try:
         result = subprocess.run(
             ["osascript", "-e", script],
@@ -171,56 +184,44 @@ def mac_push(title: str, message: str, sound: bool = False) -> None:
         if result.returncode != 0:
             stderr = (result.stderr or b"").decode("utf-8", errors="ignore").strip()
             warning(
-                f"mac_push falhou via osascript (code={result.returncode}): {stderr or 'sem stderr'}",
+                f"mac_push falhou via osascript (code={result.returncode}): "
+                f"{stderr or 'sem stderr'}",
                 "notifier",
             )
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         warning(f"mac_push falhou: {exc}", "notifier")
 
 
 def alexa_announce(message: str) -> None:
-    """Dispara anúncio na Alexa. Tenta Voice Monkey primeiro; cai para IFTTT se não configurado."""
+    """Dispara anúncio na Alexa exclusivamente via Voice Monkey."""
     import requests
 
     vm_token = os.getenv("VOICE_MONKEY_TOKEN", "")
     if vm_token:
         try:
             device = os.getenv("VOICE_MONKEY_DEVICE", "eco-room")
-            voice = os.getenv("VOICE_MONKEY_VOICE", "Ricardo")
-            response = requests.get(
+            response = requests.post(
                 "https://api-v2.voicemonkey.io/announcement",
-                params={"token": vm_token, "device": device, "text": message, "voice": voice},
+                headers=(
+                    {"Authorization": f"Bearer {vm_token}"}
+                    if not vm_token.startswith("Bearer")
+                    else {"Authorization": vm_token}
+                ),
+                json={"device": device, "text": message},
                 timeout=5,
             )
             if not response.ok:
                 warning(
-                    f"Voice Monkey falhou ({response.status_code}): {response.text[:160] or 'sem resposta'}",
+                    f"Voice Monkey falhou ({response.status_code}): "
+                    f"{response.text[:160] or 'sem resposta'}",
                     "notifier",
                 )
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             warning(f"Voice Monkey falhou: {exc}", "notifier")
         return
 
-    ifttt_key = os.getenv("IFTTT_WEBHOOK_KEY", "")
-    if ifttt_key:
-        event = os.getenv("IFTTT_ALEXA_EVENT", "neo_alert")
-        try:
-            response = requests.post(
-                f"https://maker.ifttt.com/trigger/{event}/with/key/{ifttt_key}",
-                json={"value1": message},
-                timeout=5,
-            )
-            if not response.ok:
-                warning(
-                    f"IFTTT Alexa falhou ({response.status_code}): {response.text[:160] or 'sem resposta'}",
-                    "notifier",
-                )
-        except Exception as exc:
-            warning(f"IFTTT Alexa falhou: {exc}", "notifier")
-        return
-
     warning(
-        "Alexa indisponível: configure VOICE_MONKEY_TOKEN ou IFTTT_WEBHOOK_KEY no ambiente.",
+        "Alexa indisponível: configure VOICE_MONKEY_TOKEN no ambiente.",
         "notifier",
     )
 
@@ -250,7 +251,10 @@ def banner() -> None:
     print("  ╚═╝  ╚═══╝╚══════╝ ╚═════╝ ")
     print(f"        {Color.WHITE}Sistema de Multiagentes — Gestão Pessoal{Color.RESET}")
     separator()
-    print(f"{Color.GRAY}  Agentes: Orchestrator · Scheduler · Focus Guard · Notion Sync · Validator{Color.RESET}")
+    print(
+        f"{Color.GRAY}  Agentes: Orchestrator · Scheduler · Focus Guard · "
+        f"Notion Sync · Validator{Color.RESET}"
+    )
     separator()
     print()
 
@@ -258,7 +262,9 @@ def banner() -> None:
 # ---------------------------------------------------------------------------
 # Exibição de tabela simples no terminal
 # ---------------------------------------------------------------------------
-def print_table(headers: list[str], rows: list[list[str]], title: str = "") -> None:
+def print_table(
+    headers: list[str], rows: list[list[str]], title: str = ""
+) -> None:
     """Imprime uma tabela formatada no terminal."""
     if title:
         separator(title)

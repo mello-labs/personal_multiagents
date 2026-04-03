@@ -109,11 +109,10 @@ def test_alexa_announce_warns_without_provider(monkeypatch):
 
     warnings: list[str] = []
     monkeypatch.delenv("VOICE_MONKEY_TOKEN", raising=False)
-    monkeypatch.delenv("IFTTT_WEBHOOK_KEY", raising=False)
     monkeypatch.setattr(notifier, "warning", lambda msg, *_: warnings.append(msg))
 
     notifier.alexa_announce("Mensagem")
 
     assert warnings == [
-        "Alexa indisponível: configure VOICE_MONKEY_TOKEN ou IFTTT_WEBHOOK_KEY no ambiente."
+        "Alexa indisponível: configure VOICE_MONKEY_TOKEN no ambiente."
     ]

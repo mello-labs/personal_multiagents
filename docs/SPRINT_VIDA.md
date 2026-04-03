@@ -49,14 +49,9 @@ Conclusão:
 Se o `focus_guard` rodar no Railway, ele pode até tentar chamar
 `mac_push()`, mas isso jamais gera pop-up no Mac.
 
-### 2. Alexa já não é só IFTTT
+### 2. Alexa agora usa Voice Monkey
 
-Hoje o desenho correto é:
-
-- primário: `VOICE_MONKEY_*`
-- fallback: `IFTTT_*`
-
-IFTTT continua útil. Mas já não é o único caminho.
+Hoje o desenho correto é usar `VOICE_MONKEY_*`.
 
 ### 3. Falha silenciosa deixou de ser aceitável
 
@@ -79,7 +74,7 @@ O sistema precisa distinguir:
 +---+-----------------------------+---------------------------+------------+
 | 1 | Mac push via osascript      | core/notifier.py          | parcial    |
 | 2 | Escalada no Focus Guard     | agents/focus_guard.py     | ativo      |
-| 3 | Alexa via Voice/IFTTT       | core/notifier.py          | parcial    |
+| 3 | Alexa via Voice Monkey        | core/notifier.py          | parcial    |
 | 4 | Life Guard                  | agents/life_guard.py      | ativo      |
 | 5 | Integração no loop          | agents/focus_guard.py     | ativo      |
 | 6 | CLI vida/pagar/fiz          | main.py                   | ativo      |
@@ -98,7 +93,6 @@ Suporta:
 
 - `mac_push()`
 - `alexa_announce()` via Voice Monkey
-- `alexa_announce()` via IFTTT
 - testes manuais de interrupção real
 
 Pré-requisitos:
@@ -115,7 +109,6 @@ Suporta:
 - persistência em Redis
 - logs
 - chamada HTTP para Voice Monkey
-- chamada HTTP para IFTTT
 
 Não suporta:
 
@@ -126,7 +119,7 @@ Conclusão brutal:
 Se o `focus_guard` roda no Railway:
 
 - ele pode criar alerta
-- ele pode tentar Voice Monkey ou IFTTT
+- ele pode tentar Voice Monkey
 - ele nunca vai abrir pop-up no seu Mac
 
 ## Implementação atual
@@ -142,9 +135,8 @@ Hoje concentra:
 Contrato atual:
 
 - `mac_push()` é canal local macOS
-- `alexa_announce()` tenta Voice Monkey primeiro
-- se não houver Voice Monkey, tenta IFTTT
-- se não houver nenhum provider, deve registrar indisponibilidade
+- `alexa_announce()` tenta Voice Monkey
+- se não houver um provider de voice monkey, deve registrar indisponibilidade
 
 ### 2. `agents/focus_guard.py`
 
@@ -199,12 +191,6 @@ VOICE_MONKEY_DEVICE=eco-room
 VOICE_MONKEY_VOICE=Ricardo
 ```
 
-### Alexa por IFTTT
-
-```bash
-IFTTT_WEBHOOK_KEY=
-IFTTT_ALEXA_EVENT=neo_alert
-```
 
 ### Life Guard
 
@@ -234,7 +220,7 @@ Agora ficam separados.
 - `focus_guard` executa check periódico
 - alerta é registrado no Redis
 - o log explicita se o canal é incompatível
-- Alexa só dispara se houver `VOICE_MONKEY_*` ou `IFTTT_*`
+- Alexa só dispara se houver `VOICE_MONKEY_*`
 
 ## O que este sprint ainda não concluiu
 
@@ -244,7 +230,7 @@ Só ficou mais honesto.
 Ainda faltam:
 
 - observabilidade explícita de falha de canal
-- teste automatizado de Voice Monkey e IFTTT
+- teste automatizado de Voice Monkey
 - separação formal entre "backend gerou alerta" e
   "usuário recebeu interrupção"
 - configuração declarativa de canais via Sanity
@@ -266,7 +252,7 @@ Sanity deve definir:
 
 Sanity não deve guardar:
 
-- passo a passo de IFTTT
+
 - pseudo-código histórico
 - suposições locais como se fossem universais
 

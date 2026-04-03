@@ -1,5 +1,11 @@
 # Auditoria de Código — Sistema Multiagentes
+
+> **HISTÓRICO — Todas as issues foram corrigidas em 2026-03-28.**
+> Este documento é registro de auditoria passada, não estado atual do código.
+> Para governança atual dos agentes, consulte `CONTRATO_AGENTES.md` e `MATRIZ_GOVERNANCA_AGENTES.md`.
+
 **Data:** 2026-03-28
+**Status:** RESOLVIDO — ver seção "Registro de Correções" ao final
 **Escopo:** `agents/` + `core/openai_utils.py` + `config.py`
 **Metodologia:** Revisão estática cruzada — padrões, fluxo de dados, segurança
 

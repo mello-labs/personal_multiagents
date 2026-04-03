@@ -63,7 +63,9 @@ def test_focus_guard_usa_intervention_script_do_sanity(mem, monkeypatch):
     started_at = (
         datetime.datetime.now() - datetime.timedelta(minutes=61)
     ).isoformat()
-    mem._redis_client.hset(f"session:{session_id}", mapping={"started_at": started_at})
+    mem._redis_client.hset(
+        f"session:{session_id}", mapping={"started_at": started_at}
+    )
 
     monkeypatch.setattr(
         focus_guard.sanity_client,
@@ -105,6 +107,10 @@ def test_focus_guard_usa_intervention_script_do_sanity(mem, monkeypatch):
     monkeypatch.setattr(focus_guard.notifier, "warning", lambda *args, **kwargs: None)
     monkeypatch.setattr(focus_guard.notifier, "error", lambda *args, **kwargs: None)
     monkeypatch.setattr(focus_guard.notifier, "separator", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        "agents.life_guard.run_all_checks",
+        lambda: {"routines": [], "hydration": False, "finances": []}
+    )
 
     focus_guard._run_focus_check()
 

@@ -99,7 +99,7 @@ Para registrar conta a pagar: `python main.py pagar Cartao XP dia 15 valor 1200`
 O sistema envia notificacoes ativas via:
 
 - **macOS push** — pop-up no canto da tela (osascript)
-- **Alexa** — anuncio por voz via Voice Monkey (ou IFTTT como fallback)
+- **Alexa** — anuncio por voz via Voice Monkey
 
 Alertas automaticos:
 

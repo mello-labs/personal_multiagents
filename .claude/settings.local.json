@@ -113,7 +113,11 @@
       "Bash(/opt/homebrew/bin/python3 -m venv venv)",
       "Bash(venv/bin/python --version)",
       "Bash(venv/bin/python -c \":*)",
-      "Bash(ls /Users/nettomello/Library/Containers/com.docker.docker/Data/inference*.sock)"
+      "Bash(ls /Users/nettomello/Library/Containers/com.docker.docker/Data/inference*.sock)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -s \"https://api.github.com/orgs/NEO-PROTOCOL/repos\")",
+      "Bash(curl -s \"https://api.github.com/orgs/NEO-PROTOCOL/projects\")",
+      "Bash(curl -s \"https://api.github.com/orgs/NEO-PROTOCOL/repos?per_page=100\")"
     ]
   }
 }

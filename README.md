@@ -255,8 +255,7 @@ multiagentes/
 | Notion          | fonte principal de tarefas e agenda  | `NOTION_TOKEN`, `NOTION_TASKS_DB_ID`, `NOTION_AGENDA_DB_ID`          |
 | Google Calendar | integração opcional de agenda        | `GOOGLE_CREDENTIALS_FILE`, `GOOGLE_TOKEN_FILE`, `GOOGLE_CALENDAR_ID` |
 | Sanity.io       | prompts, personas, configs externas  | `SANITY_PROJECT_ID`, `SANITY_API_TOKEN`, `SANITY_DATASET`            |
-| Voice Monkey    | anúncios na Alexa (primário)         | `VOICE_MONKEY_TOKEN`, `VOICE_MONKEY_DEVICE`, `VOICE_MONKEY_VOICE`    |
-| IFTTT           | anúncios na Alexa (fallback)         | `IFTTT_WEBHOOK_KEY`, `IFTTT_ALEXA_EVENT`                             |
+| Voice Monkey    | anúncios na Alexa                    | `VOICE_MONKEY_TOKEN`, `VOICE_MONKEY_DEVICE`                          |
 | Redis           | memória e persistência               | `REDIS_URL`                                                          |
 | Railway         | deploy do app web                    | `PORT`, `REDIS_URL`                                                  |
 
@@ -299,10 +298,6 @@ SANITY_USE_CDN=false
 VOICE_MONKEY_TOKEN=          # api-v2.voicemonkey.io
 VOICE_MONKEY_DEVICE=eco-room
 VOICE_MONKEY_VOICE=Ricardo
-
-# --- NOTIFICAÇÕES — IFTTT FALLBACK (opcional) ---
-IFTTT_WEBHOOK_KEY=           # ifttt.com/maker_webhooks/settings
-IFTTT_ALEXA_EVENT=neo_alert
 
 # --- LIFE GUARD (opcional) ---
 LIFE_GUARD_ACTIVE_HOUR_START=8

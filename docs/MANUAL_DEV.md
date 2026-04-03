@@ -4,10 +4,10 @@
 
 - **Backend**: Python 3.11+ / FastAPI / Uvicorn
 - **Frontend**: Jinja2 templates + HTMX 1.9 (zero JS framework)
-- **Persistencia**: Redis (Railway) com fallback SQLite local
+- **Persistencia**: Redis (Railway em produção, localhost em dev) — sem SQLite
 - **Agentes**: OpenAI GPT via orchestrator, Focus Guard, Scheduler, Notion Sync, Calendar Sync, Validator, Retrospective, Life Guard, Persona Manager
 - **Config externa**: Sanity.io (prompts, personas, agent config) via `core/sanity_client.py`
-- **Notificações**: macOS push (osascript), Alexa (Voice Monkey / IFTTT fallback)
+- **Notificações**: macOS push (osascript), Alexa (Voice Monkey)
 - **Deploy**: Railway (Dockerfile) ou local
 
 ## Estrutura de arquivos relevantes
@@ -166,8 +166,7 @@ SANITY_API_TOKEN=        # Token Viewer
 SANITY_DATASET=          # Dataset (default: production)
 
 # Notificações
-VOICE_MONKEY_TOKEN=      # Alexa via Voice Monkey (primário)
-IFTTT_WEBHOOK_KEY=       # Alexa via IFTTT (fallback)
+VOICE_MONKEY_TOKEN=      # Alexa via Voice Monkey
 
 # Life Guard
 LIFE_GUARD_ACTIVE_HOUR_START=  # Hora início (default: 8)

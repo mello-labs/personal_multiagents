@@ -181,14 +181,31 @@ Objetivo:
 - issues abertas
 - projetos parados
 
-Orgs iniciais:
+Orgs monitoradas (todas as 6):
 
-- `NEO-PROTOCOL`
-- `NEO-FlowOFF`
-- `flowpay-system`
-- `neo-smart-factory`
-- `FluxxDAO`
-- `wodxpro`
+- `NEO-PROTOCOL` — orquestrador soberano (Board: projects/1)
+- `NEO-FlowOFF` — SaaS de criadores (Board: projects/1)
+- `neo-smart-factory` — Web3 / NFT (Board: projects/1)
+- `flowpay-system` — pagamentos (Board: pendente)
+- `FluxxDAO` — DAO / DeFi (Board: pendente)
+- `wodxpro` — protocolo esportivo (Board: pendente)
+
+Mapa completo dos repos e stacks em: `ECOSSISTEMAS_ORGS.md`
+
+Repos prioritários dentro de `NEO-PROTOCOL`:
+
+| Repo | Prioridade | O que observar |
+|---|---|---|
+| `neobot` | P0 | uptime, último commit, webhook health |
+| `neo-dashboard` | P0 | deploy Railway, health check |
+| `neo-mello-eth` | P0 | uptime neomello.eth.limo, Redis Railway |
+| `mio-system` | P1 | health da API de identidade |
+| `neoflw-base-landing` | P1 | uptime Vercel |
+| `.github` | P2 | PRs e issues da org |
+
+Project Board da org:
+- `github.com/orgs/NEO-PROTOCOL/projects/1`
+- observar: items sem movimento há mais de 7 dias
 
 ### Railway
 

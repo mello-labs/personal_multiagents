@@ -98,7 +98,7 @@ Acionado via `python main.py calendar auth|import|status` ou `make calendar-auth
 
 Implementado conforme `docs/SPRINT_VIDA.md`:
 
-- **`core/notifier.py`** — `mac_push()` (osascript) + `alexa_announce()` (Voice Monkey → fallback IFTTT)
+- **`core/notifier.py`** — `mac_push()` (osascript) + `alexa_announce()` (Voice Monkey)
 - **`agents/focus_guard.py`** — `ESCALATION_LEVELS` com 4 níveis (30min/60min/2h/4h), canais mac/alexa
 - **`agents/life_guard.py`** — rotinas diárias (exercício, banho, almoço, jantar), hidratação cada 90min, alertas de finanças
 - **`main.py`** — comandos `vida`, `fiz <rotina>`, `pagar <nome> dia <N> valor <V>`
@@ -213,7 +213,7 @@ Focus Guard envia via webhook quando detecta desvio severo.
 | Interface | CLI + Web (FastAPI + HTMX + PWA) | PWA com push notifications |
 | Fonte de agenda | Notion (principal) + Google Calendar (opcional) | + Linear/Jira |
 | Observabilidade | Logs em arquivo + audit trail Redis | OpenTelemetry + Jaeger |
-| Alertas | Terminal + macOS push + Alexa (Voice Monkey/IFTTT) | + Slack/Discord webhook |
+| Alertas | Terminal + macOS push + Alexa (Voice Monkey) | + Slack/Discord webhook |
 | Testes | pytest (5 modules) | + integration tests + coverage gate |
 | Config externa | Sanity.io (prompts, personas, agent config) | Deploy schemas + migrar todos os prompts |
-| Notificações | macOS osascript + Voice Monkey (fallback IFTTT) | + Web Push + Telegram |
+| Notificações | macOS osascript + Voice Monkey | + Web Push + Telegram |

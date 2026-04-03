@@ -16,6 +16,8 @@ token.json
 credentials.json
 *.plist
 .DS_Store
+tests
+
 
 # Redis dumps
 *.rdb

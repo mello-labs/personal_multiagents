@@ -1,5 +1,11 @@
 # Guias de Referência Externos
 
+> **EM ESCOPO.**
+> O neo-dashboard é a superfície de controle da org NEO-PROTOCOL,
+> gerenciada por NEØ MELLØ como responsabilidade pessoal.
+> Monitorar saúde e roadmap desta org é uma das tarefas do `ecosystem_monitor`.
+> Ver também: `ECOSSISTEMA_NEO_PROTOCOL.md` para mapeamento completo.
+
 Catálogo inicial de superfícies, runbooks e páginas de operação já existentes fora deste repositório.
 
 Objetivo:
