@@ -194,42 +194,42 @@ Usos não recomendados:
 - [x] Alinhar `llm_prompt` com os agentes reais
   - Status: DONE
   - Log: `llm_prompt` foi reduzido ao conjunto real de entidades com uso de LLM, os prompts de `orchestrator`, `scheduler`, `validator`, `retrospective` e `focus_guard` foram publicados no Sanity, e o runtime passou a ler esses documentos com fallback explícito.
-  - Commit: pendente
+  - Commit: `679f390`
 
 - [x] Alinhar `agent_config` com os agentes reais
   - Status: DONE
   - Log: `agent_config` foi alinhado ao catálogo real de agentes e capacidades, com publicação no Studio dos registros de governança para `focus_guard`, `life_guard`, `gemma_local`, `orchestrator`, `scheduler`, `notion_sync`, `validator`, `retrospective`, `calendar_sync` e `persona_manager`.
-  - Commit: pendente
+  - Commit: `679f390`
 
 - [x] Resolver fonte canônica de `persona`
   - Status: DONE
   - Log: `persona_manager` passou a ler o Sanity como fonte primária e o disco como fallback explícito, preservando compatibilidade do runtime e eliminando a dupla verdade como regra operacional.
-  - Commit: pendente
+  - Commit: `679f390`
 
 - [x] Definir schema de domínio `project`
   - Status: DONE
   - Log: schema `project` criado no Studio para modelar iniciativas estruturais, com campos de status, visibilidade, links e relações.
-  - Commit: pendente
+  - Commit: `679f390`
 
 - [x] Definir schema de domínio `area`
   - Status: DONE
   - Log: schema `area` criado no Studio para separar áreas de vida e operação como camada semântica própria.
-  - Commit: pendente
+  - Commit: `679f390`
 
 - [x] Definir schema de domínio `task`
   - Status: DONE
   - Log: schema `task` criado no Studio para representar tarefas canônicas com precedência semântica sobre o estado quente do Redis.
-  - Commit: pendente
+  - Commit: `679f390`
 
 - [x] Definir schema de domínio `agenda_block`
   - Status: DONE
   - Log: schema `agenda_block` criado no Studio para consolidar blocos de agenda como entidades próprias, distintas da renderização efêmera do dia.
-  - Commit: pendente
+  - Commit: `679f390`
 
 - [x] Definir schema de domínio `focus_session`
   - Status: DONE
   - Log: schema `focus_session` criado no Studio para capturar sessões de foco, desvio e outcome como histórico operacional interpretável.
-  - Commit: pendente
+  - Commit: `679f390`
 
 - [x] Definir schema de domínio `signal`
   - Status: DONE
@@ -249,12 +249,12 @@ Usos não recomendados:
 - [x] Definir schema de domínio `public_artifact`
   - Status: DONE
   - Log: schema `public_artifact` criado no Studio para sustentar a futura eclusa privado -> público sem vazamento direto do kernel íntimo.
-  - Commit: pendente
+  - Commit: `679f390`
 
 - [x] Concluir Fase 2. Sanity v2
   - Status: DONE
   - Log: governança dos agentes consolidada no Sanity, Studio redeployado com schemas de domínio, runtime conectado ao Studio para prompts, personas e scripts de intervenção, e documentos-base publicados no dataset `production`.
-  - Commit: pendente
+  - Commit: `679f390`
 
 ### Fase 3. Fronteira privado -> público
 
