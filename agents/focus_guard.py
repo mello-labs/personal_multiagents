@@ -67,6 +67,32 @@ def _get_deviation_prompt() -> str:
     return sanity_client.get_prompt("focus_guard", "deviation", _DEVIATION_PROMPT_FALLBACK)
 
 
+def _get_runtime_environment() -> str:
+    return "local" if sys.platform == "darwin" else "server"
+
+
+def _get_intervention_levels() -> list[dict]:
+    scripts = sanity_client.get_intervention_scripts(AGENT_NAME)
+    current_env = _get_runtime_environment()
+    levels = []
+    for script in scripts:
+        scope = script.get("environment_scope", "all")
+        if scope not in {"all", current_env}:
+            continue
+        levels.append(
+            {
+                "minutes": script.get("trigger_minutes"),
+                "channel": script.get("channel", "log_only"),
+                "sound": script.get("sound", False),
+                "msg": script.get("message", ""),
+                "title": script.get("title", "NEO Focus Guard"),
+            }
+        )
+
+    levels = [level for level in levels if isinstance(level.get("minutes"), int)]
+    return levels or ESCALATION_LEVELS
+
+
 # ---------------------------------------------------------------------------
 # Análise de progresso
 # ---------------------------------------------------------------------------
@@ -175,14 +201,14 @@ def analyze_with_llm(progress: dict) -> dict:
 def _check_escalation(session_minutes: int, task_title: str, planned_minutes: int) -> None:
     """Dispara notificação no canal certo baseado no tempo de sessão."""
     today = datetime.now().date()
-    for level in ESCALATION_LEVELS:
+    for level in _get_intervention_levels():
         state_key = f"escalation:{today}:{task_title}:{level['minutes']}"
         if memory.get_state(state_key):
             continue
         if session_minutes >= level["minutes"]:
             msg = level["msg"].format(task=task_title, planned=planned_minutes)
             if "mac" in level["channel"]:
-                notifier.mac_push("NEO Focus Guard", msg, sound=level["sound"])
+                notifier.mac_push(level.get("title", "NEO Focus Guard"), msg, sound=level["sound"])
             if "alexa" in level["channel"]:
                 notifier.alexa_announce(msg)
             memory.set_state(state_key, "sent")

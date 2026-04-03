@@ -32,3 +32,36 @@ def test_persona_manager_temperature_defaults():
     temperature = persona_manager.get_temperature("coordinator", "direct")
 
     assert isinstance(temperature, float)
+
+
+def test_persona_manager_prefere_sanity_quando_persona_existe(monkeypatch):
+    from agents import persona_manager
+
+    monkeypatch.setattr(
+        persona_manager.sanity_client,
+        "get_all_personas",
+        lambda: [
+            {
+                "name": "Coordenador Sanity",
+                "persona_id": {"current": "coordinator"},
+                "short_name": "Coord+",
+                "icon": "◎",
+                "description": "Versão governada no Studio",
+                "tone": "warm",
+                "system_prompt": "Prompt vindo do Sanity",
+                "synthesis_prompt_override": "Síntese do Sanity",
+                "direct_prompt_override": "Direto do Sanity",
+                "parameters": {"temperature_direct": 0.11},
+                "active": True,
+            }
+        ],
+    )
+    monkeypatch.setattr(persona_manager.sanity_client, "invalidate_cache", lambda: None)
+
+    persona_manager.reload_personas()
+    persona = persona_manager.get_persona("coordinator")
+
+    assert persona["name"] == "Coordenador Sanity"
+    assert persona["icon"] == "◎"
+    assert persona_manager.get_direct_prompt("coordinator") == "Direto do Sanity"
+    assert persona_manager.get_temperature("coordinator", "direct") == 0.11

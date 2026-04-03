@@ -14,12 +14,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents import notion_sync as _notion_sync
 from config import NOTION_RETROSPECTIVE_PAGE_ID
-from core import memory, notifier
+from core import memory, notifier, sanity_client
 from core.openai_utils import chat_completions
 
 AGENT_NAME = "retrospective"
 
-RETROSPECTIVE_PROMPT = """Você é um coach de produtividade pessoal.
+_RETROSPECTIVE_PROMPT_FALLBACK = """Você é um coach de produtividade pessoal.
 Analise os dados da semana e gere uma retrospectiva clara com:
 
 1. **Resumo Executivo** — 2-3 frases sobre a semana
@@ -30,6 +30,14 @@ Analise os dados da semana e gere uma retrospectiva clara com:
 
 Seja direto, honesto e encorajador. Baseie-se apenas nos dados fornecidos.
 Responda em markdown formatado."""
+
+
+def _get_retrospective_prompt() -> str:
+    return sanity_client.get_prompt(
+        "retrospective",
+        "retrospective",
+        _RETROSPECTIVE_PROMPT_FALLBACK,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -123,7 +131,7 @@ def generate_report(data: dict) -> str:
     try:
         response = chat_completions(
             messages=[
-                {"role": "system", "content": RETROSPECTIVE_PROMPT},
+                {"role": "system", "content": _get_retrospective_prompt()},
                 {
                     "role": "user",
                     "content": f"Dados da semana:\n\n{data_str}\n\nGere a retrospectiva.",

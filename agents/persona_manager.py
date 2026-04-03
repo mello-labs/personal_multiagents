@@ -15,7 +15,7 @@ from typing import Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core import notifier
+from core import notifier, sanity_client
 
 _PERSONAS_DIR = Path(__file__).parent.parent / "personas"
 _DEFAULT_PERSONA_ID = "coordinator"
@@ -25,21 +25,85 @@ _personas: dict[str, dict] = {}
 _active_persona_id: str = _DEFAULT_PERSONA_ID
 
 
-def _load_personas() -> None:
-    """Carrega todas as personas do diretório personas/."""
-    global _personas
-    _personas.clear()
+def _normalize_persona(source: dict, fallback_id: str) -> dict:
+    persona_id = (
+        source.get("id")
+        or source.get("persona_id", {}).get("current")
+        or source.get("persona_id")
+        or fallback_id
+    )
+    params = source.get("parameters") or {}
+    if not params:
+        params = {
+            "temperature_routing": source.get("temperature_routing", 0.2),
+            "temperature_synthesis": source.get("temperature_synthesis", 0.5),
+            "temperature_direct": source.get("temperature_direct", 0.7),
+        }
+
+    return {
+        "id": persona_id,
+        "name": source.get("name", fallback_id),
+        "short_name": source.get("short_name", source.get("name", fallback_id)[:6]),
+        "icon": source.get("icon", "●"),
+        "description": source.get("description", ""),
+        "tone": source.get("tone", "neutral"),
+        "language": source.get("language", "pt-BR"),
+        "system_prompt": source.get("system_prompt", ""),
+        "synthesis_prompt_override": source.get("synthesis_prompt_override", ""),
+        "direct_prompt_override": source.get("direct_prompt_override", ""),
+        "preferred_model": source.get("preferred_model", ""),
+        "role": source.get("role", ""),
+        "parameters": params,
+        "active": source.get("active", True),
+    }
+
+
+def _load_personas_from_disk() -> dict[str, dict]:
+    personas: dict[str, dict] = {}
     if not _PERSONAS_DIR.exists():
-        return
+        return personas
     for filepath in sorted(_PERSONAS_DIR.glob("*.json")):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 persona = json.load(f)
             pid = persona.get("id", filepath.stem)
-            persona["id"] = pid
-            _personas[pid] = persona
+            personas[pid] = _normalize_persona(persona, pid)
         except (json.JSONDecodeError, OSError) as e:
             notifier.error(f"Erro ao carregar {filepath.name}: {e}", "persona_manager")
+    return personas
+
+
+def _load_personas_from_sanity() -> dict[str, dict]:
+    personas: dict[str, dict] = {}
+    for item in sanity_client.get_all_personas():
+        if not isinstance(item, dict):
+            continue
+        pid = (
+            item.get("persona_id", {}).get("current")
+            or item.get("persona_id")
+            or item.get("id")
+            or item.get("_id")
+        )
+        if not pid:
+            continue
+        personas[pid] = _normalize_persona(item, pid)
+    return personas
+
+
+def _load_personas() -> None:
+    """Carrega personas com Sanity como fonte primária e disco como fallback."""
+    global _personas
+    disk_personas = _load_personas_from_disk()
+    sanity_personas = _load_personas_from_sanity()
+    merged = dict(disk_personas)
+    merged.update(sanity_personas)
+    _personas.clear()
+    _personas.update(merged)
+    global _active_persona_id
+    if _active_persona_id not in _personas:
+        _active_persona_id = (
+            _DEFAULT_PERSONA_ID if _DEFAULT_PERSONA_ID in _personas else next(iter(_personas), _DEFAULT_PERSONA_ID)
+        )
 
 
 def _ensure_loaded() -> None:
@@ -48,7 +112,8 @@ def _ensure_loaded() -> None:
 
 
 def reload_personas() -> None:
-    """Força recarga das personas do disco."""
+    """Força recarga das personas do Sanity e do disco."""
+    sanity_client.invalidate_cache()
     _load_personas()
 
 

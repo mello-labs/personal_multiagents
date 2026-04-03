@@ -37,7 +37,7 @@ from agents.persona_manager import (
     get_system_prompt,
     get_temperature,
 )
-from core import memory, notifier
+from core import memory, notifier, sanity_client
 from core.openai_utils import chat_completions
 
 AGENT_NAME = "orchestrator"
@@ -105,7 +105,7 @@ AGENTS_REGISTRY = {
 
 
 # Prompt do Orchestrator para roteamento de intenções
-ROUTING_PROMPT = f"""Você é o Orchestrator de um sistema de gestão pessoal com múltiplos agentes.
+_ROUTING_PROMPT_FALLBACK = f"""Você é o Orchestrator de um sistema de gestão pessoal com múltiplos agentes.
 Dado um input do usuário, determine:
 1. Qual(is) agente(s) acionar
 2. Qual ação executar em cada agente
@@ -162,20 +162,26 @@ SYNTHESIS_PROMPT = _SYNTHESIS_BASE
 DIRECT_RESPONSE_PROMPT = _DIRECT_BASE
 
 
+def _get_routing_prompt() -> str:
+    return sanity_client.get_prompt("orchestrator", "routing", _ROUTING_PROMPT_FALLBACK)
+
+
 def _build_synthesis_prompt(persona_id: Optional[str] = None) -> str:
     """Compõe o prompt de síntese com a persona ativa."""
+    base_prompt = sanity_client.get_prompt("orchestrator", "synthesis", _SYNTHESIS_BASE)
     persona_override = get_synthesis_prompt(persona_id)
     if persona_override:
-        return f"{_SYNTHESIS_BASE}\n\nEstilo de resposta:\n{persona_override}"
-    return _SYNTHESIS_BASE
+        return f"{base_prompt}\n\nEstilo de resposta:\n{persona_override}"
+    return base_prompt
 
 
 def _build_direct_prompt(persona_id: Optional[str] = None) -> str:
     """Compõe o prompt de resposta direta com a persona ativa."""
+    base_prompt = sanity_client.get_prompt("orchestrator", "direct", _DIRECT_BASE)
     persona_override = get_direct_prompt(persona_id)
     if persona_override:
-        return f"{_DIRECT_BASE}\n\nEstilo de resposta:\n{persona_override}"
-    return _DIRECT_BASE
+        return f"{base_prompt}\n\nEstilo de resposta:\n{persona_override}"
+    return base_prompt
 
 
 def _context_history_text(context: Optional[dict]) -> str:
@@ -388,7 +394,7 @@ def route_intent(user_input: str, context: Optional[dict] = None) -> dict:
         system_context.update(context)
 
     messages = [
-        {"role": "system", "content": ROUTING_PROMPT},
+        {"role": "system", "content": _get_routing_prompt()},
         {
             "role": "user",
             "content": f"""Contexto do sistema:

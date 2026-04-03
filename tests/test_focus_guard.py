@@ -56,3 +56,58 @@ def test_focus_guard_reagenda_bloco_atrasado_e_audita(mem, monkeypatch):
     assert "focus_check" in tipos
     assert "auto_reschedule" in tipos
     assert "alert_created" in tipos
+
+
+def test_focus_guard_usa_intervention_script_do_sanity(mem, monkeypatch):
+    session_id = mem.start_focus_session(7, "Troia", 25)
+    started_at = (
+        datetime.datetime.now() - datetime.timedelta(minutes=61)
+    ).isoformat()
+    mem._redis_client.hset(f"session:{session_id}", mapping={"started_at": started_at})
+
+    monkeypatch.setattr(
+        focus_guard.sanity_client,
+        "get_intervention_scripts",
+        lambda agent_name=None: [
+            {
+                "agent_name": "focus_guard",
+                "trigger_minutes": 60,
+                "channel": "mac",
+                "sound": True,
+                "message": "Sanity diz para revisar {task} aos {planned} minutos.",
+                "title": "FG Studio",
+                "environment_scope": "all",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        focus_guard,
+        "analyze_with_llm",
+        lambda progress: {
+            "on_track": True,
+            "deviation_level": "none",
+            "message": "Tudo sob controle.",
+            "recommendation": "",
+        },
+    )
+
+    mac_calls = []
+    monkeypatch.setattr(
+        focus_guard.notifier,
+        "mac_push",
+        lambda title, message, sound=False: mac_calls.append((title, message, sound)),
+    )
+    monkeypatch.setattr(
+        focus_guard.notifier, "focus_alert", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(focus_guard.notifier, "info", lambda *args, **kwargs: None)
+    monkeypatch.setattr(focus_guard.notifier, "success", lambda *args, **kwargs: None)
+    monkeypatch.setattr(focus_guard.notifier, "warning", lambda *args, **kwargs: None)
+    monkeypatch.setattr(focus_guard.notifier, "error", lambda *args, **kwargs: None)
+    monkeypatch.setattr(focus_guard.notifier, "separator", lambda *args, **kwargs: None)
+
+    focus_guard._run_focus_check()
+
+    assert mac_calls == [
+        ("FG Studio", "Sanity diz para revisar Troia aos 25 minutos.", True)
+    ]

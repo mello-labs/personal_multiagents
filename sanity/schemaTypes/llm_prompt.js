@@ -18,7 +18,7 @@ export default {
     },
     {
       name: 'agent',
-      title: 'Agente',
+      title: 'Agente ou capacidade',
       type: 'string',
       options: {
         list: [
@@ -27,10 +27,7 @@ export default {
           'scheduler',
           'validator',
           'retrospective',
-          'life_guard',
-          'persona_manager',
-          'gemma_local',
-          'ecosystem_monitor'
+          'gemma_local'
         ]
       },
       validation: Rule => Rule.required()

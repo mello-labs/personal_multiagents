@@ -18,8 +18,7 @@ export default {
           'calendar_sync',
           'life_guard',
           'persona_manager',
-          'gemma_local',
-          'ecosystem_monitor'
+          'gemma_local'
         ]
       },
       validation: Rule => Rule.required()

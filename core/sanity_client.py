@@ -113,13 +113,14 @@ def get_agent_config(agent_name: str) -> Optional[dict]:
 # ---------------------------------------------------------------------------
 
 
-def get_intervention_scripts() -> list:
+def get_intervention_scripts(agent_name: Optional[str] = None) -> list:
     """
     Lista scripts de intervenção ordenados por trigger_minutes.
     Usado pelo Focus Guard para substituir o ESCALATION_LEVELS hardcoded.
     """
+    agent_filter = f' && agent_name == "{agent_name}"' if agent_name else ""
     return _query(
-        '*[_type == "intervention_script" && active == true] | order(trigger_minutes asc)'
+        f'*[_type == "intervention_script" && active == true{agent_filter}] | order(trigger_minutes asc)'
     ) or []
 
 

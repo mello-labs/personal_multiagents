@@ -22,6 +22,12 @@ export default {
       type: 'string'
     },
     {
+      name: 'icon',
+      title: 'Icone',
+      type: 'string',
+      description: 'Unicode curto para representar a persona na UI'
+    },
+    {
       name: 'description',
       title: 'Descrição',
       type: 'text'
@@ -43,10 +49,19 @@ export default {
           {title: 'Direct', value: 'direct'},
           {title: 'Casual', value: 'casual'},
           {title: 'Technical', value: 'technical'},
-          {title: 'Strategic', value: 'strategic'}
+          {title: 'Strategic', value: 'strategic'},
+          {title: 'Sharp', value: 'sharp'},
+          {title: 'Bold', value: 'bold'},
+          {title: 'Neutral', value: 'neutral'}
         ],
         layout: 'radio'
       }
+    },
+    {
+      name: 'language',
+      title: 'Idioma',
+      type: 'string',
+      description: 'Ex.: pt-BR ou en'
     },
     {
       name: 'style_rules',
@@ -61,6 +76,18 @@ export default {
       type: 'text',
       rows: 20,
       validation: Rule => Rule.required()
+    },
+    {
+      name: 'synthesis_prompt_override',
+      title: 'Override de síntese',
+      type: 'text',
+      rows: 8
+    },
+    {
+      name: 'direct_prompt_override',
+      title: 'Override de resposta direta',
+      type: 'text',
+      rows: 8
     },
     {
       name: 'preferred_model',
@@ -81,6 +108,37 @@ export default {
       validation: Rule => Rule.min(0).max(2)
     },
     {
+      name: 'temperature_direct',
+      title: 'Temperatura (direta)',
+      type: 'number',
+      validation: Rule => Rule.min(0).max(2)
+    },
+    {
+      name: 'parameters',
+      title: 'Parâmetros',
+      type: 'object',
+      fields: [
+        {
+          name: 'temperature_routing',
+          title: 'Temperatura (roteamento)',
+          type: 'number',
+          validation: Rule => Rule.min(0).max(2)
+        },
+        {
+          name: 'temperature_synthesis',
+          title: 'Temperatura (síntese)',
+          type: 'number',
+          validation: Rule => Rule.min(0).max(2)
+        },
+        {
+          name: 'temperature_direct',
+          title: 'Temperatura (direta)',
+          type: 'number',
+          validation: Rule => Rule.min(0).max(2)
+        }
+      ]
+    },
+    {
       name: 'active',
       title: 'Ativa',
       type: 'boolean',
@@ -91,11 +149,12 @@ export default {
     select: {
       title: 'name',
       tone: 'tone',
-      role: 'role'
+      role: 'role',
+      icon: 'icon'
     },
-    prepare({ title, tone, role }) {
+    prepare({ title, tone, role, icon }) {
       return {
-        title,
+        title: icon ? `${icon} ${title}` : title,
         subtitle: role ? `${role} · ${tone || 'sem tom'}` : tone
       }
     }

@@ -19,13 +19,13 @@ from typing import Optional
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents import notion_sync as _notion_sync
-from core import memory, notifier
+from core import memory, notifier, sanity_client
 from core.openai_utils import chat_completions
 
 AGENT_NAME = "validator"
 
 # Prompt do Validator para análise de conclusão via LLM
-VALIDATOR_PROMPT = """Você é o Validator Agent de um sistema de gestão pessoal.
+_VALIDATOR_PROMPT_FALLBACK = """Você é o Validator Agent de um sistema de gestão pessoal.
 Sua função é determinar se uma tarefa foi genuinamente concluída.
 
 Avalie os dados fornecidos e retorne um veredicto em JSON:
@@ -52,6 +52,10 @@ Critérios para "pending_confirmation":
   - Dados parcialmente consistentes — precisa de confirmação do usuário
   - Tarefa marcada manualmente sem sessão de foco associada
 """
+
+
+def _get_validator_prompt() -> str:
+    return sanity_client.get_prompt("validator", "validation", _VALIDATOR_PROMPT_FALLBACK)
 
 
 # ---------------------------------------------------------------------------
@@ -163,7 +167,7 @@ Emita seu veredicto em JSON puro (sem markdown).
     try:
         response = chat_completions(
             messages=[
-                {"role": "system", "content": VALIDATOR_PROMPT},
+                {"role": "system", "content": _get_validator_prompt()},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.1,   # Baixa temperatura: queremos análise determinística

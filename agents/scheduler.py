@@ -15,13 +15,13 @@ from typing import Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core import memory, notifier
+from core import memory, notifier, sanity_client
 from core.openai_utils import chat_completions
 
 AGENT_NAME = "scheduler"
 
 # Prompt de sistema para o LLM do Scheduler
-SYSTEM_PROMPT = """Você é o Scheduler Agent de um sistema de gestão pessoal.
+_SYSTEM_PROMPT_FALLBACK = """Você é o Scheduler Agent de um sistema de gestão pessoal.
 Sua função é gerenciar blocos de tempo e priorizar tarefas.
 
 Ao receber uma lista de tarefas, você deve:
@@ -40,6 +40,10 @@ e "warnings" (lista de avisos). Exemplo de bloco:
   "notes": "Começar pelo PR #42"
 }
 """
+
+
+def _get_system_prompt() -> str:
+    return sanity_client.get_prompt("scheduler", "scheduling", _SYSTEM_PROMPT_FALLBACK)
 
 
 # ---------------------------------------------------------------------------
@@ -437,7 +441,7 @@ Por favor, crie uma agenda otimizada para hoje. Retorne JSON puro (sem markdown)
     try:
         response = chat_completions(
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": _get_system_prompt()},
                 {"role": "user", "content": user_message},
             ],
             temperature=0.3,
