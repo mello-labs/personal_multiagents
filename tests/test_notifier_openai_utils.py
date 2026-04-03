@@ -14,7 +14,7 @@ def test_notify_outputs_expected_line(capsys):
 
     output = _strip_ansi(capsys.readouterr().out)
     assert "Mensagem ok" in output
-    assert "[SUCCESS]" in output
+    assert "[OK]" in output
     assert "(tester)" in output
 
 

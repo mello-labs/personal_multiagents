@@ -2,7 +2,7 @@
 
 > **HISTÓRICO — Todas as issues foram corrigidas em 2026-03-28.**
 > Este documento é registro de auditoria passada, não estado atual do código.
-> Para governança atual dos agentes, consulte `CONTRATO_AGENTES.md` e `MATRIZ_GOVERNANCA_AGENTES.md`.
+> Para governança atual dos agentes, consulte `../governanca/CONTRATO_AGENTES.md` e `../governanca/MATRIZ_GOVERNANCA_AGENTES.md`.
 
 **Data:** 2026-03-28
 **Status:** RESOLVIDO — ver seção "Registro de Correções" ao final
@@ -13,12 +13,12 @@
 
 ## Sumário Executivo
 
-| Severidade | Quantidade |
-|---|---|
-| CRÍTICO | 0 |
-| ALTO | 6 |
-| MÉDIO | 7 |
-| Arquitetural | 1 |
+| Severidade   | Quantidade |
+| ------------ | ---------- |
+| CRÍTICO      | 0          |
+| ALTO         | 6          |
+| MÉDIO        | 7          |
+| Arquitetural | 1          |
 
 Nenhuma chamada direta à API OpenAI encontrada fora de `core/openai_utils.py` — padrão central respeitado em todos os agentes.
 
@@ -209,34 +209,34 @@ Qualquer mudança no protocolo (ex: adicionar campo `"agent"` na resposta, mudar
 
 ## Status de Conformidade — Padrão Central OpenAI
 
-| Agente | Usa `chat_completions` | Chamada direta |
-|---|---|---|
-| orchestrator.py | ✅ | — |
-| scheduler.py | ✅ | corrigido 2026-03-28 |
-| focus_guard.py | ✅ | — |
-| validator.py | ✅ | — |
-| retrospective.py | ✅ | — |
-| notion_sync.py | não usa LLM | — |
-| calendar_sync.py | não usa LLM | — |
-| persona_manager.py | não usa LLM | — |
+| Agente             | Usa `chat_completions` | Chamada direta       |
+| ------------------ | ---------------------- | -------------------- |
+| orchestrator.py    | ✅                     | —                    |
+| scheduler.py       | ✅                     | corrigido 2026-03-28 |
+| focus_guard.py     | ✅                     | —                    |
+| validator.py       | ✅                     | —                    |
+| retrospective.py   | ✅                     | —                    |
+| notion_sync.py     | não usa LLM            | —                    |
+| calendar_sync.py   | não usa LLM            | —                    |
+| persona_manager.py | não usa LLM            | —                    |
 
 ---
 
 ## Registro de Correções — 2026-03-28
 
-| ID | Arquivo | O que foi feito |
-|---|---|---|
-| A1 | `focus_guard.py` | `_run_focus_check` aceita `progress`/`analysis` opcionais; `force_check` os computa uma vez e repassa — 3 LLM calls → 1 |
-| A2 | `focus_guard.py` | Condição overdue: `end_t < now or start_t < now` → `end_t < now` |
-| A3 | `scheduler.py` | `return` dentro do `for` condicionado a `start_dt.date().isoformat() == target_date` — multi-day search agora funciona |
-| A4 | `validator.py` | `sqlite3.connect` direto removido; adicionados `get_focus_sessions_for_task` e `get_agenda_blocks_for_task` em `core/memory.py` com índices Redis `sessions:task:{id}` e `blocks:task:{id}` |
-| A5 | `retrospective.py` | HTTP direto para Notion substituído por `_notion_sync._request` (retry via tenacity); `_notion_headers()` local removida |
-| A6 | `calendar_sync.py` | `open(token_file, "w")` → `os.open(..., 0o600)` + `os.fdopen` |
-| M1 | `persona_manager.py` | `print()` → `notifier.error()`; adicionado import de `notifier` |
-| M2 | `agents/__init__.py` | `__all__` atualizado com todos os 8 agentes |
-| M3 | `scheduler.py` | Código morto após o loop tornado acessível pela correção A3 |
-| M4 | `validator.py` | Imports dinâmicos de `notion_sync` movidos para o topo do arquivo |
-| M5 | `calendar_sync.py` | Fallback de timezone emite `notifier.warning` |
-| M6 | `orchestrator.py` | `Any` removido do import `typing`; f-string sem interpolação corrigida |
-| M6 | `notion_sync.py` | `List` removido do import `typing` |
-| M7 | `config.py` | `validate_config()` já chamada em `main.py:45` — sem alteração necessária |
+| ID  | Arquivo              | O que foi feito                                                                                                                                                                             |
+| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | `focus_guard.py`     | `_run_focus_check` aceita `progress`/`analysis` opcionais; `force_check` os computa uma vez e repassa — 3 LLM calls → 1                                                                     |
+| A2  | `focus_guard.py`     | Condição overdue: `end_t < now or start_t < now` → `end_t < now`                                                                                                                            |
+| A3  | `scheduler.py`       | `return` dentro do `for` condicionado a `start_dt.date().isoformat() == target_date` — multi-day search agora funciona                                                                      |
+| A4  | `validator.py`       | `sqlite3.connect` direto removido; adicionados `get_focus_sessions_for_task` e `get_agenda_blocks_for_task` em `core/memory.py` com índices Redis `sessions:task:{id}` e `blocks:task:{id}` |
+| A5  | `retrospective.py`   | HTTP direto para Notion substituído por `_notion_sync._request` (retry via tenacity); `_notion_headers()` local removida                                                                    |
+| A6  | `calendar_sync.py`   | `open(token_file, "w")` → `os.open(..., 0o600)` + `os.fdopen`                                                                                                                               |
+| M1  | `persona_manager.py` | `print()` → `notifier.error()`; adicionado import de `notifier`                                                                                                                             |
+| M2  | `agents/__init__.py` | `__all__` atualizado com todos os 8 agentes                                                                                                                                                 |
+| M3  | `scheduler.py`       | Código morto após o loop tornado acessível pela correção A3                                                                                                                                 |
+| M4  | `validator.py`       | Imports dinâmicos de `notion_sync` movidos para o topo do arquivo                                                                                                                           |
+| M5  | `calendar_sync.py`   | Fallback de timezone emite `notifier.warning`                                                                                                                                               |
+| M6  | `orchestrator.py`    | `Any` removido do import `typing`; f-string sem interpolação corrigida                                                                                                                      |
+| M6  | `notion_sync.py`     | `List` removido do import `typing`                                                                                                                                                          |
+| M7  | `config.py`          | `validate_config()` já chamada em `main.py:45` — sem alteração necessária                                                                                                                   |

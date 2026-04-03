@@ -12,13 +12,8 @@
   },
   "layers": {
     "capture": {
-      "primary": [
-        "notion_tasks",
-        "notion_agenda"
-      ],
-      "optional": [
-        "google_calendar"
-      ],
+      "primary": ["notion_tasks", "notion_agenda"],
+      "optional": ["google_calendar"],
       "human_entry": true
     },
     "runtime": {
@@ -32,19 +27,54 @@
     "publication": {
       "gate": "public_artifact",
       "review_required": true,
-      "distribution": [
-        "ipfs",
-        "ipni",
-        "nettomello.eth.limo"
-      ]
+      "distribution": ["ipfs", "ipni", "nettomello.eth.limo"]
     }
   },
   "precedence": {
-    "policy_doc": "docs/POLITICA_PRECEDENCIA_NOTION.md",
+    "policy_doc": "docs/governanca/POLITICA_PRECEDENCIA_NOTION.md",
     "capture_human": "notion",
     "operational_now": "redis",
     "semantic_memory": "sanity",
     "publication_authority": "sanity"
+  },
+  "schema_storage": {
+    "sanity": {
+      "role": "fonte_canonica_de_schema",
+      "types": [
+        "llm_prompt",
+        "persona",
+        "agent_config",
+        "intervention_script",
+        "project",
+        "area",
+        "task",
+        "agenda_block",
+        "focus_session",
+        "signal",
+        "source",
+        "decision",
+        "public_artifact"
+      ]
+    },
+    "redis": {
+      "role": "estado_quente_cache_operacional",
+      "not_schema_authority": true,
+      "notes": "Redis armazena estado e cache, nao define schema."
+    }
+  },
+  "signal_source_decision_persistence": {
+    "signal": {
+      "cache": "redis",
+      "primary": "sanity",
+      "redis_ttl_hours": 24
+    },
+    "source": {
+      "primary": "sanity"
+    },
+    "decision": {
+      "primary": "sanity",
+      "redis_cache": false
+    }
   },
   "agents": [
     {
@@ -52,21 +82,13 @@
       "file": "agents/orchestrator.py",
       "kind": "llm_agent",
       "uses_llm": true,
-      "reads": [
-        "redis",
-        "sanity_persona",
-        "sanity_llm_prompt"
-      ],
+      "reads": ["redis", "sanity_persona", "sanity_llm_prompt"],
       "writes": [],
       "handoff_registered": true,
       "sanity_governance": {
         "agent_config": true,
         "persona": "shared",
-        "llm_prompt": [
-          "routing",
-          "synthesis",
-          "direct"
-        ],
+        "llm_prompt": ["routing", "synthesis", "direct"],
         "intervention_script": false
       },
       "publication_authority": false
@@ -82,16 +104,12 @@
         "sanity_llm_prompt",
         "sanity_intervention_script"
       ],
-      "writes": [
-        "redis"
-      ],
+      "writes": ["redis"],
       "handoff_registered": true,
       "sanity_governance": {
         "agent_config": true,
         "persona": false,
-        "llm_prompt": [
-          "deviation"
-        ],
+        "llm_prompt": ["deviation"],
         "intervention_script": true
       },
       "publication_authority": false
@@ -101,20 +119,13 @@
       "file": "agents/scheduler.py",
       "kind": "llm_agent",
       "uses_llm": true,
-      "reads": [
-        "redis",
-        "sanity_llm_prompt"
-      ],
-      "writes": [
-        "redis"
-      ],
+      "reads": ["redis", "sanity_llm_prompt"],
+      "writes": ["redis"],
       "handoff_registered": true,
       "sanity_governance": {
         "agent_config": true,
         "persona": false,
-        "llm_prompt": [
-          "scheduling"
-        ],
+        "llm_prompt": ["scheduling"],
         "intervention_script": false
       },
       "publication_authority": false
@@ -124,22 +135,13 @@
       "file": "agents/validator.py",
       "kind": "llm_agent",
       "uses_llm": true,
-      "reads": [
-        "redis",
-        "notion",
-        "sanity_llm_prompt"
-      ],
-      "writes": [
-        "redis",
-        "notion"
-      ],
+      "reads": ["redis", "notion", "sanity_llm_prompt"],
+      "writes": ["redis", "notion"],
       "handoff_registered": true,
       "sanity_governance": {
         "agent_config": true,
         "persona": false,
-        "llm_prompt": [
-          "validation"
-        ],
+        "llm_prompt": ["validation"],
         "intervention_script": false
       },
       "publication_authority": false
@@ -149,21 +151,13 @@
       "file": "agents/retrospective.py",
       "kind": "llm_agent",
       "uses_llm": true,
-      "reads": [
-        "redis",
-        "notion",
-        "sanity_llm_prompt"
-      ],
-      "writes": [
-        "notion"
-      ],
+      "reads": ["redis", "notion", "sanity_llm_prompt"],
+      "writes": ["notion"],
       "handoff_registered": true,
       "sanity_governance": {
         "agent_config": true,
         "persona": "shared",
-        "llm_prompt": [
-          "retrospective"
-        ],
+        "llm_prompt": ["retrospective"],
         "intervention_script": false
       },
       "publication_authority": false
@@ -173,14 +167,8 @@
       "file": "agents/notion_sync.py",
       "kind": "sync_agent",
       "uses_llm": false,
-      "reads": [
-        "notion",
-        "redis"
-      ],
-      "writes": [
-        "redis",
-        "notion"
-      ],
+      "reads": ["notion", "redis"],
+      "writes": ["redis", "notion"],
       "handoff_registered": true,
       "sanity_governance": {
         "agent_config": true,
@@ -195,13 +183,8 @@
       "file": "agents/calendar_sync.py",
       "kind": "optional_sync_capability",
       "uses_llm": false,
-      "reads": [
-        "google_calendar",
-        "redis"
-      ],
-      "writes": [
-        "redis"
-      ],
+      "reads": ["google_calendar", "redis"],
+      "writes": ["redis"],
       "handoff_registered": true,
       "sanity_governance": {
         "agent_config": true,
@@ -216,16 +199,28 @@
       "file": "agents/life_guard.py",
       "kind": "routine_guard",
       "uses_llm": false,
-      "reads": [
-        "redis"
-      ],
-      "writes": [
-        "redis"
-      ],
-      "handoff_registered": true,
+      "reads": ["redis", "sanity_persona"],
+      "writes": ["redis"],
+      "handoff_registered": false,
       "sanity_governance": {
         "agent_config": true,
         "persona": true,
+        "llm_prompt": false,
+        "intervention_script": false
+      },
+      "publication_authority": false
+    },
+    {
+      "id": "ecosystem_monitor",
+      "file": "agents/ecosystem_monitor.py",
+      "kind": "monitor_agent",
+      "uses_llm": false,
+      "reads": ["redis", "external_apis"],
+      "writes": ["redis"],
+      "handoff_registered": false,
+      "sanity_governance": {
+        "agent_config": true,
+        "persona": false,
         "llm_prompt": false,
         "intervention_script": false
       },
@@ -236,10 +231,7 @@
       "file": "agents/persona_manager.py",
       "kind": "governance_resolver",
       "uses_llm": false,
-      "reads": [
-        "sanity_persona",
-        "local_persona_files"
-      ],
+      "reads": ["sanity_persona", "local_persona_files"],
       "writes": [],
       "handoff_registered": false,
       "sanity_governance": {
@@ -255,10 +247,7 @@
       "file": "core/openai_utils.py",
       "kind": "llm_fallback_capability",
       "uses_llm": "fallback",
-      "reads": [
-        "sanity_persona",
-        "agent_config"
-      ],
+      "reads": ["sanity_persona", "agent_config"],
       "writes": [],
       "handoff_registered": false,
       "sanity_governance": {
@@ -276,39 +265,28 @@
       "path": "/health",
       "file": "web/app.py",
       "role": "healthcheck",
-      "connects_to": [
-        "redis"
-      ]
+      "connects_to": ["redis"]
     },
     {
       "method": "GET",
       "path": "/",
       "file": "web/app.py",
       "role": "dashboard",
-      "connects_to": [
-        "redis",
-        "persona_manager"
-      ]
+      "connects_to": ["redis", "persona_manager"]
     },
     {
       "method": "GET",
       "path": "/audit",
       "file": "web/app.py",
       "role": "audit_surface",
-      "connects_to": [
-        "redis",
-        "persona_manager"
-      ]
+      "connects_to": ["redis", "persona_manager"]
     },
     {
       "method": "GET",
       "path": "/agenda",
       "file": "web/app.py",
       "role": "agenda_surface",
-      "connects_to": [
-        "redis",
-        "calendar_sync"
-      ]
+      "connects_to": ["redis", "calendar_sync"]
     },
     {
       "method": "GET",
@@ -322,119 +300,112 @@
       "path": "/chat",
       "file": "web/app.py",
       "role": "chat_handoff_entry",
-      "connects_to": [
-        "orchestrator"
-      ]
+      "connects_to": ["orchestrator"]
     },
     {
       "method": "GET",
       "path": "/status",
       "file": "web/app.py",
       "role": "htmx_status_partial",
-      "connects_to": [
-        "redis"
-      ]
+      "connects_to": ["redis"]
     },
     {
       "method": "POST",
       "path": "/agenda/import",
       "file": "web/app.py",
       "role": "agenda_import",
-      "connects_to": [
-        "notion_sync",
-        "calendar_sync"
-      ]
+      "connects_to": ["notion_sync", "calendar_sync"]
     },
     {
       "method": "POST",
       "path": "/agenda/history/import",
       "file": "web/app.py",
       "role": "agenda_history_import",
-      "connects_to": [
-        "notion_sync",
-        "calendar_sync"
-      ]
+      "connects_to": ["notion_sync", "calendar_sync"]
     },
     {
       "method": "GET",
       "path": "/tasks",
       "file": "web/app.py",
       "role": "tasks_partial",
-      "connects_to": [
-        "redis"
-      ]
+      "connects_to": ["redis"]
     },
     {
       "method": "GET",
       "path": "/tasks-page",
       "file": "web/app.py",
       "role": "tasks_surface",
-      "connects_to": [
-        "redis"
-      ]
+      "connects_to": ["redis"]
     },
     {
       "method": "GET",
       "path": "/chat-page",
       "file": "web/app.py",
       "role": "chat_surface",
-      "connects_to": [
-        "persona_manager"
-      ]
+      "connects_to": ["persona_manager"]
     },
     {
       "method": "POST",
       "path": "/task",
       "file": "web/app.py",
       "role": "task_create",
-      "connects_to": [
-        "redis"
-      ]
+      "connects_to": ["redis"]
     },
     {
       "method": "POST",
       "path": "/task/{task_id}/complete",
       "file": "web/app.py",
       "role": "task_complete",
-      "connects_to": [
-        "redis"
-      ]
+      "connects_to": ["redis"]
     },
     {
       "method": "POST",
       "path": "/sync",
       "file": "web/app.py",
       "role": "notion_sync_trigger",
-      "connects_to": [
-        "notion_sync"
-      ]
+      "connects_to": ["notion_sync"]
     },
     {
       "method": "POST",
       "path": "/block/{block_id}/complete",
       "file": "web/app.py",
       "role": "agenda_block_complete",
-      "connects_to": [
-        "redis"
-      ]
+      "connects_to": ["redis"]
     },
     {
       "method": "GET",
       "path": "/personas",
       "file": "web/app.py",
       "role": "persona_list",
-      "connects_to": [
-        "persona_manager"
-      ]
+      "connects_to": ["persona_manager"]
     },
     {
       "method": "POST",
       "path": "/persona/{persona_id}",
       "file": "web/app.py",
       "role": "persona_switch",
-      "connects_to": [
-        "persona_manager"
-      ]
+      "connects_to": ["persona_manager"]
+    },
+    {
+      "method": "GET",
+      "path": "/ecosystem-page",
+      "file": "web/app.py",
+      "role": "ecosystem_surface",
+      "connects_to": ["ecosystem_monitor", "redis"]
+    },
+    {
+      "method": "GET",
+      "path": "/ecosystem",
+      "file": "web/app.py",
+      "role": "ecosystem_partial",
+      "connects_to": ["ecosystem_monitor", "redis"]
+    },
+    {
+      "method": "POST",
+      "path": "/ecosystem/run",
+      "file": "web/app.py",
+      "role": "ecosystem_run",
+      "connects_to": ["ecosystem_monitor", "redis"]
     }
   ],
   "handoffs": {
@@ -452,27 +423,22 @@
     {
       "command": "sync",
       "file": "main.py",
-      "connects_to": [
-        "notion_sync"
-      ]
+      "connects_to": ["notion_sync"]
     },
     {
       "command": "focus",
       "file": "main.py",
-      "connects_to": [
-        "focus_guard",
-        "scheduler",
-        "redis"
-      ]
+      "connects_to": ["focus_guard", "scheduler", "redis"]
     },
     {
-      "command": "task add",
+      "command": "add-task",
       "file": "main.py",
-      "connects_to": [
-        "redis",
-        "notion_sync",
-        "scheduler"
-      ]
+      "connects_to": ["redis", "notion_sync", "scheduler"]
+    },
+    {
+      "command": "ecosistema",
+      "file": "main.py",
+      "connects_to": ["ecosystem_monitor", "redis"]
     }
   ],
   "sanity": {
@@ -498,12 +464,12 @@
     ]
   },
   "documentation_links": {
-    "agent_contract": "docs/CONTRATO_AGENTES.md",
-    "agent_governance_matrix": "docs/MATRIZ_GOVERNANCA_AGENTES.md",
-    "notion_precedence_policy": "docs/POLITICA_PRECEDENCIA_NOTION.md",
-    "sanity_sovereignty_plan": "docs/PLANO_SOBERANIA_SANITY.md",
-    "signal_source_decision_schema": "docs/SCHEMA_SIGNAL_DECISION.md",
-    "ecosystem_sprint": "docs/SPRINT_ECOSSISTEMA.md",
-    "nextsteps": "docs/NEXTSTEPS.md"
+    "agent_contract": "docs/governanca/CONTRATO_AGENTES.md",
+    "agent_governance_matrix": "docs/governanca/MATRIZ_GOVERNANCA_AGENTES.md",
+    "notion_precedence_policy": "docs/governanca/POLITICA_PRECEDENCIA_NOTION.md",
+    "sanity_sovereignty_plan": "docs/governanca/PLANO_SOBERANIA_SANITY.md",
+    "signal_source_decision_schema": "docs/arquitetura/SCHEMA_SIGNAL_DECISION.md",
+    "ecosystem_sprint": "docs/planejamento/SPRINT_ECOSSISTEMA.md",
+    "nextsteps": "docs/planejamento/NEXTSTEPS.md"
   }
 }

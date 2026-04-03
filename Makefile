@@ -156,7 +156,7 @@ redis-stats: ## Exibe estatísticas do Redis (memória, conexões, etc.)
 
 .PHONY: redis-weekly
 redis-weekly: ## Exibe checklist semanal do Redis na Railway (5 min)
-	@cat docs/redis-weekly-check.md
+	@cat docs/operacao/redis-weekly-check.md
 
 .PHONY: redis-flush
 redis-flush: ## ⚠️  Apaga TODOS os dados do Redis local

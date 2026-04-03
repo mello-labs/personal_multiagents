@@ -86,7 +86,7 @@ PWA completa com 5 tabs:
 | `/chat-page` | Chat full-screen com Orchestrator |
 | `/audit` | Eventos, alertas, handoffs, logs |
 
-Detalhes em `docs/MANUAL_DEV.md` e `docs/MANUAL_USUARIO.md`.
+Detalhes em `docs/operacao/MANUAL_DEV.md` e `docs/operacao/MANUAL_USUARIO.md`.
 
 ### 2.4 Google Calendar opcional ✅ concluída
 
@@ -96,7 +96,7 @@ Acionado via `python main.py calendar auth|import|status` ou `make calendar-auth
 
 ### 2.5 SPRINT VIDA — Interrupção Cognitiva ✅ concluída
 
-Implementado conforme `docs/SPRINT_VIDA.md`:
+Implementado conforme `docs/planejamento/SPRINT_VIDA.md`:
 
 - **`core/notifier.py`** — `mac_push()` (osascript) + `alexa_announce()` (Voice Monkey)
 - **`agents/focus_guard.py`** — `ESCALATION_LEVELS` com 4 níveis (30min/60min/2h/4h), canais mac/alexa
@@ -115,11 +115,11 @@ Implementado conforme `docs/SPRINT_VIDA.md`:
 - **Sanity Studio** — scaffolding em `sanity/`, schemas pendentes de deploy
 - **Pendente:** deploy dos 4 schemas (`llm_prompt`, `persona`, `agent_config`, `intervention_script`) e migração dos prompts hardcoded
 
-Detalhes em `docs/SANITY_SCHEMA.md`.
+Detalhes em `docs/arquitetura/SANITY_SCHEMA.md`.
 
 ### 2.8 Auditoria de Código ✅ concluída
 
-13 issues identificadas e corrigidas (6 HIGH, 7 MEDIUM). Registro completo em `docs/AUDITORIA_AGENTES.md`.
+13 issues identificadas e corrigidas (6 HIGH, 7 MEDIUM). Registro completo em `docs/auditoria/AUDITORIA_AGENTES.md`.
 
 ---
 
@@ -178,7 +178,7 @@ Transição de orquestração síncrona para coreografia (push):
 
 ### 4.1 SPRINT ECOSSISTEMA — Monitoramento ativo ⏳ próximo
 
-`agents/ecosystem_monitor.py` — spec completa em `docs/SPRINT_ECOSSISTEMA.md`:
+`agents/ecosystem_monitor.py` — spec completa em `docs/planejamento/SPRINT_ECOSSISTEMA.md`:
 
 - GitHub: commits, PRs, issues por org (6 orgs)
 - Railway: status de serviços via GraphQL

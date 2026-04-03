@@ -89,8 +89,8 @@ Infra
 - 2 deploys bem-sucedidos
 - 1 serviço Railway com comportamento suspeito
 
-On-chain
-- NEOFLW: preço, volume e variação
+On-chain ( nao pedi como extrema urgencia esse check )
+- NEOFLW: preço, volume e variação https://neoflw.vercel.app/
 
 Ação sugerida
 - revisar smart-nft
@@ -190,20 +190,21 @@ Orgs monitoradas (todas as 6):
 - `FluxxDAO` — DAO / DeFi (Board: pendente)
 - `wodxpro` — protocolo esportivo (Board: pendente)
 
-Mapa completo dos repos e stacks em: `ECOSSISTEMAS_ORGS.md`
+Mapa completo dos repos e stacks em: `../ecossistema/ECOSSISTEMAS_ORGS.md`
 
 Repos prioritários dentro de `NEO-PROTOCOL`:
 
-| Repo | Prioridade | O que observar |
-|---|---|---|
-| `neobot` | P0 | uptime, último commit, webhook health |
-| `neo-dashboard` | P0 | deploy Railway, health check |
-| `neo-mello-eth` | P0 | uptime neomello.eth.limo, Redis Railway |
-| `mio-system` | P1 | health da API de identidade |
-| `neoflw-base-landing` | P1 | uptime Vercel |
-| `.github` | P2 | PRs e issues da org |
+| Repo                  | Prioridade | O que observar                          |
+| --------------------- | ---------- | --------------------------------------- |
+| `neobot`              | P0         | uptime, último commit, webhook health   |
+| `neo-dashboard`       | P0         | deploy Railway, health check            |
+| `neo-mello-eth`       | P0         | uptime neomello.eth.limo, Redis Railway |
+| `mio-system`          | P1         | health da API de identidade             |
+| `neoflw-base-landing` | P1         | uptime Vercel                           |
+| `.github`             | P2         | PRs e issues da org                     |
 
 Project Board da org:
+
 - `github.com/orgs/NEO-PROTOCOL/projects/1`
 - observar: items sem movimento há mais de 7 dias
 
@@ -271,15 +272,15 @@ Sem isso, ele só produz log bonito.
 
 ## Dependências arquiteturais
 
-Este sprint depende de três coisas antes de
-entrar em implementação séria:
+Para sair da Fase 1 e promover sinais ao Sanity,
+três coisas precisam estar resolvidas:
 
 1. governança mínima dos agentes no Sanity
 2. contrato explícito de precedência entre fontes
 3. camada `signal/source/decision` definida
 
-Sem isso, o monitor nasce forte demais e cego
-demais ao mesmo tempo. Bela tragédia.
+Sem isso, o monitor opera como cache útil,
+mas não fecha a ponte semântica.
 
 ---
 
@@ -331,6 +332,8 @@ Critério de aceite:
 - listar atividade real das orgs
 - mostrar status básico de serviços
 - mostrar NEOFLW corretamente
+
+Status: implementado no runtime com cache em Redis.
 
 ### Fase 2 — Infraestrutura expandida
 
@@ -449,9 +452,8 @@ Alerta imediato fica só para:
 
 ## Próximo passo correto
 
-Antes de implementar o agente:
+Para sair do cache e entrar em semântica:
 
-1. fechar governança dos agentes íntimos no Sanity
-2. criar a camada `signal/source/decision`
-3. então trazer o `ecosystem_monitor` para a
-   órbita externa do kernel
+1. amarrar `signal/source/decision` ao Sanity
+2. definir thresholds e dedupe no Studio
+3. promover sinais do Redis para Sanity por regra

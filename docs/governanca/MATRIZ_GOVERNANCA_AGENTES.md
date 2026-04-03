@@ -26,18 +26,19 @@ Resposta curta:
 
 ## Cobertura Atual
 
-| Entidade | Usa LLM | agent_config | persona | llm_prompt | intervention_script | Cobertura | O que falta |
-|---|---:|---:|---:|---:|---:|---|---|
-| `orchestrator` | sim | sim | usa persona compartilhada | sim | N/A | FORTE | política de fallback por provider e guardrails de delegação |
-| `focus_guard` | sim | sim | N/A | sim | sim | FORTE | remover fallback local quando o Studio estiver maduro o bastante |
-| `scheduler` | sim | sim | N/A | sim | N/A | FORTE | externalizar parâmetros de carga, pausa e conflito |
-| `validator` | sim | sim | N/A | sim | N/A | FORTE | externalizar thresholds de consistência e veredicto |
-| `retrospective` | sim | sim | usa persona compartilhada | sim | N/A | FORTE | template final e política de exportação |
-| `notion_sync` | não | sim | N/A | N/A | N/A | PARCIAL | política explícita de reconciliação e precedência |
-| `calendar_sync` | não | sim | N/A | N/A | N/A | PARCIAL | política de import/export e precedência do Notion |
-| `life_guard` | não | sim | sim | N/A | N/A | PARCIAL | scripts de rotina, janelas ativas e canais editáveis |
-| `persona_manager` | não | sim | sim | N/A | N/A | PARCIAL | versionamento editorial e política de override por fase |
-| `gemma_local` | fallback | sim | sim | N/A | N/A | PARCIAL | política explícita de quando preferir local por intenção, não só por falha |
+| Entidade            |  Usa LLM | agent_config |                   persona | llm_prompt | intervention_script | Cobertura | O que falta                                                                |
+| ------------------- | -------: | -----------: | ------------------------: | ---------: | ------------------: | --------- | -------------------------------------------------------------------------- |
+| `orchestrator`      |      sim |          sim | usa persona compartilhada |        sim |                 N/A | FORTE     | política de fallback por provider e guardrails de delegação                |
+| `focus_guard`       |      sim |          sim |                       N/A |        sim |                 sim | FORTE     | remover fallback local quando o Studio estiver maduro o bastante           |
+| `scheduler`         |      sim |          sim |                       N/A |        sim |                 N/A | FORTE     | externalizar parâmetros de carga, pausa e conflito                         |
+| `validator`         |      sim |          sim |                       N/A |        sim |                 N/A | FORTE     | externalizar thresholds de consistência e veredicto                        |
+| `retrospective`     |      sim |          sim | usa persona compartilhada |        sim |                 N/A | FORTE     | template final e política de exportação                                    |
+| `notion_sync`       |      não |          sim |                       N/A |        N/A |                 N/A | PARCIAL   | política explícita de reconciliação e precedência                          |
+| `calendar_sync`     |      não |          sim |                       N/A |        N/A |                 N/A | PARCIAL   | política de import/export e precedência do Notion                          |
+| `life_guard`        |      não |          sim |                       sim |        N/A |                 N/A | PARCIAL   | scripts de rotina, janelas ativas e canais editáveis                       |
+| `ecosystem_monitor` |      não |          sim |                       N/A |        N/A |                 N/A | PARCIAL   | sinal, source, decision e thresholds governados                            |
+| `persona_manager`   |      não |          sim |                       sim |        N/A |                 N/A | PARCIAL   | versionamento editorial e política de override por fase                    |
+| `gemma_local`       | fallback |          sim |                       sim |        N/A |                 N/A | PARCIAL   | política explícita de quando preferir local por intenção, não só por falha |
 
 ## Pacote Mínimo por Entidade
 
@@ -105,6 +106,14 @@ Resposta curta:
 - `intervention_script`: ainda não
 - Falta: transformar rotina, canal e janela ativa em governança editável
 
+### `ecosystem_monitor`
+
+- `agent_config`: sim
+- `persona`: não
+- `llm_prompt`: não
+- `intervention_script`: não
+- Falta: `signal`, `source`, `decision` no Sanity, thresholds, TTL e dedupe
+
 ### `persona_manager`
 
 - `agent_config`: sim
@@ -130,12 +139,13 @@ O que ainda falta não é "ter ou não ter instrução".
 O que falta é elevar alguns agentes de governança
 `PARCIAL` para governança `FORTE`.
 
-Os quatro pontos que ainda pedem fechamento fino são:
+Os cinco pontos que ainda pedem fechamento fino são:
 
-1. `notion_sync`
-2. `calendar_sync`
-3. `life_guard`
-4. `gemma_local`
+1. `ecosystem_monitor`
+2. `notion_sync`
+3. `calendar_sync`
+4. `life_guard`
+5. `gemma_local`
 
 Esse é o conjunto residual. O resto já saiu do terreno
 da improvisação.

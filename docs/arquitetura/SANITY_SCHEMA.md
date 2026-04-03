@@ -5,10 +5,11 @@
 > O projeto evoluiu: hoje há 13 schemas deployed em `n4dgl02q/production`.
 >
 > Documentos atuais:
+>
 > - Schemas locais: `sanity/schemaTypes/` (13 tipos)
-> - Governança: `PLANO_SOBERANIA_SANITY.md`
-> - Cobertura por agente: `MATRIZ_GOVERNANCA_AGENTES.md`
-> - Contratos: `CONTRATO_AGENTES.md`
+> - Governança: `../governanca/PLANO_SOBERANIA_SANITY.md`
+> - Cobertura por agente: `../governanca/MATRIZ_GOVERNANCA_AGENTES.md`
+> - Contratos: `../governanca/CONTRATO_AGENTES.md`
 
 **Status:** HISTÓRICO — superado pela Fase 2 do Sanity (concluída em 2026-04-03, commit `679f390`)
 **Projeto Sanity:** `n4dgl02q` (criado em sanity.io/manage)
@@ -55,78 +56,85 @@ Mudar qualquer um deles exige redeploy. Com Sanity:
 ```javascript
 // sanity/schemas/llm_prompt.js
 export default {
-  name: 'llm_prompt',
-  title: 'LLM Prompt',
-  type: 'document',
+  name: "llm_prompt",
+  title: "LLM Prompt",
+  type: "document",
   fields: [
     {
-      name: 'id',
-      title: 'ID único',
-      type: 'slug',
-      options: { source: 'name' },
-      validation: Rule => Rule.required()
+      name: "id",
+      title: "ID único",
+      type: "slug",
+      options: { source: "name" },
+      validation: (Rule) => Rule.required(),
     },
     {
-      name: 'name',
-      title: 'Nome',
-      type: 'string',
-      validation: Rule => Rule.required()
+      name: "name",
+      title: "Nome",
+      type: "string",
+      validation: (Rule) => Rule.required(),
     },
     {
-      name: 'agent',
-      title: 'Agente',
-      type: 'string',
+      name: "agent",
+      title: "Agente",
+      type: "string",
       options: {
         list: [
-          'orchestrator',
-          'focus_guard',
-          'scheduler',
-          'validator',
-          'retrospective',
-          'life_guard',
-          'ecosystem_monitor'
-        ]
+          "orchestrator",
+          "focus_guard",
+          "scheduler",
+          "validator",
+          "retrospective",
+          "life_guard",
+          "ecosystem_monitor",
+        ],
       },
-      validation: Rule => Rule.required()
+      validation: (Rule) => Rule.required(),
     },
     {
-      name: 'prompt_type',
-      title: 'Tipo',
-      type: 'string',
+      name: "prompt_type",
+      title: "Tipo",
+      type: "string",
       options: {
-        list: ['routing', 'synthesis', 'direct', 'deviation', 'validation', 'retrospective']
-      }
+        list: [
+          "routing",
+          "synthesis",
+          "direct",
+          "deviation",
+          "validation",
+          "retrospective",
+        ],
+      },
     },
     {
-      name: 'system_prompt',
-      title: 'System Prompt',
-      type: 'text',
+      name: "system_prompt",
+      title: "System Prompt",
+      type: "text",
       rows: 20,
-      validation: Rule => Rule.required()
+      validation: (Rule) => Rule.required(),
     },
     {
-      name: 'temperature',
-      title: 'Temperatura',
-      type: 'number',
-      validation: Rule => Rule.min(0).max(2)
+      name: "temperature",
+      title: "Temperatura",
+      type: "number",
+      validation: (Rule) => Rule.min(0).max(2),
     },
     {
-      name: 'active',
-      title: 'Ativo',
-      type: 'boolean',
-      initialValue: true
+      name: "active",
+      title: "Ativo",
+      type: "boolean",
+      initialValue: true,
     },
     {
-      name: 'notes',
-      title: 'Notas / Changelog',
-      type: 'text',
-      rows: 4
-    }
+      name: "notes",
+      title: "Notas / Changelog",
+      type: "text",
+      rows: 4,
+    },
   ],
   preview: {
-    select: { title: 'name', subtitle: 'agent' }
-  }
-}
+    select: { title: "name", subtitle: "agent" },
+  },
+};
 ```
 
 ### Document Type: `persona`
@@ -134,64 +142,71 @@ export default {
 ```javascript
 // sanity/schemas/persona.js
 export default {
-  name: 'persona',
-  title: 'Persona',
-  type: 'document',
+  name: "persona",
+  title: "Persona",
+  type: "document",
   fields: [
     {
-      name: 'persona_id',
-      title: 'ID',
-      type: 'slug',
-      options: { source: 'name' }
+      name: "persona_id",
+      title: "ID",
+      type: "slug",
+      options: { source: "name" },
     },
     {
-      name: 'name',
-      title: 'Nome',
-      type: 'string'
+      name: "name",
+      title: "Nome",
+      type: "string",
     },
     {
-      name: 'short_name',
-      title: 'Nome curto',
-      type: 'string'
+      name: "short_name",
+      title: "Nome curto",
+      type: "string",
     },
     {
-      name: 'description',
-      title: 'Descrição',
-      type: 'text',
-      rows: 3
+      name: "description",
+      title: "Descrição",
+      type: "text",
+      rows: 3,
     },
     {
-      name: 'tone',
-      title: 'Tom',
-      type: 'string',
+      name: "tone",
+      title: "Tom",
+      type: "string",
       options: {
-        list: ['warm', 'professional', 'direct', 'casual', 'technical', 'strategic']
-      }
+        list: [
+          "warm",
+          "professional",
+          "direct",
+          "casual",
+          "technical",
+          "strategic",
+        ],
+      },
     },
     {
-      name: 'system_prompt',
-      title: 'System Prompt base',
-      type: 'text',
-      rows: 15
+      name: "system_prompt",
+      title: "System Prompt base",
+      type: "text",
+      rows: 15,
     },
     {
-      name: 'temperature_routing',
-      title: 'Temperatura (roteamento)',
-      type: 'number'
+      name: "temperature_routing",
+      title: "Temperatura (roteamento)",
+      type: "number",
     },
     {
-      name: 'temperature_synthesis',
-      title: 'Temperatura (síntese)',
-      type: 'number'
+      name: "temperature_synthesis",
+      title: "Temperatura (síntese)",
+      type: "number",
     },
     {
-      name: 'active',
-      title: 'Ativa',
-      type: 'boolean',
-      initialValue: true
-    }
-  ]
-}
+      name: "active",
+      title: "Ativa",
+      type: "boolean",
+      initialValue: true,
+    },
+  ],
+};
 ```
 
 ### Document Type: `agent_config`
@@ -199,44 +214,44 @@ export default {
 ```javascript
 // sanity/schemas/agent_config.js
 export default {
-  name: 'agent_config',
-  title: 'Configuração de Agente',
-  type: 'document',
+  name: "agent_config",
+  title: "Configuração de Agente",
+  type: "document",
   fields: [
     {
-      name: 'agent_name',
-      title: 'Agente',
-      type: 'string',
+      name: "agent_name",
+      title: "Agente",
+      type: "string",
       options: {
         list: [
-          'focus_guard',
-          'scheduler',
-          'life_guard',
-          'ecosystem_monitor',
-          'notion_sync'
-        ]
-      }
+          "focus_guard",
+          "scheduler",
+          "life_guard",
+          "ecosystem_monitor",
+          "notion_sync",
+        ],
+      },
     },
     {
-      name: 'enabled',
-      title: 'Habilitado',
-      type: 'boolean',
-      initialValue: true
+      name: "enabled",
+      title: "Habilitado",
+      type: "boolean",
+      initialValue: true,
     },
     {
-      name: 'check_interval_minutes',
-      title: 'Intervalo de check (minutos)',
-      type: 'number'
+      name: "check_interval_minutes",
+      title: "Intervalo de check (minutos)",
+      type: "number",
     },
     {
-      name: 'parameters',
-      title: 'Parâmetros adicionais (JSON)',
-      type: 'text',
+      name: "parameters",
+      title: "Parâmetros adicionais (JSON)",
+      type: "text",
       rows: 8,
-      description: 'JSON com parâmetros específicos do agente'
-    }
-  ]
-}
+      description: "JSON com parâmetros específicos do agente",
+    },
+  ],
+};
 ```
 
 ### Document Type: `intervention_script`
@@ -244,56 +259,58 @@ export default {
 ```javascript
 // sanity/schemas/intervention_script.js
 export default {
-  name: 'intervention_script',
-  title: 'Script de Intervenção',
-  type: 'document',
-  description: 'Mensagens que o sistema envia quando detecta hiperfoco prolongado',
+  name: "intervention_script",
+  title: "Script de Intervenção",
+  type: "document",
+  description:
+    "Mensagens que o sistema envia quando detecta hiperfoco prolongado",
   fields: [
     {
-      name: 'trigger_minutes',
-      title: 'Disparar após (minutos)',
-      type: 'number',
-      description: 'Minutos de sessão ativa para disparar'
+      name: "trigger_minutes",
+      title: "Disparar após (minutos)",
+      type: "number",
+      description: "Minutos de sessão ativa para disparar",
     },
     {
-      name: 'channel',
-      title: 'Canal',
-      type: 'string',
-      options: { list: ['mac', 'alexa', 'mac+alexa'] }
+      name: "channel",
+      title: "Canal",
+      type: "string",
+      options: { list: ["mac", "alexa", "mac+alexa"] },
     },
     {
-      name: 'urgency',
-      title: 'Urgência',
-      type: 'string',
-      options: { list: ['gentle', 'firm', 'loud'] }
+      name: "urgency",
+      title: "Urgência",
+      type: "string",
+      options: { list: ["gentle", "firm", "loud"] },
     },
     {
-      name: 'title',
-      title: 'Título (Mac push)',
-      type: 'string'
+      name: "title",
+      title: "Título (Mac push)",
+      type: "string",
     },
     {
-      name: 'message',
-      title: 'Mensagem',
-      type: 'text',
+      name: "message",
+      title: "Mensagem",
+      type: "text",
       rows: 3,
-      description: 'Use {task} para nome da tarefa, {minutes} para tempo decorrido'
+      description:
+        "Use {task} para nome da tarefa, {minutes} para tempo decorrido",
     },
     {
-      name: 'active',
-      title: 'Ativo',
-      type: 'boolean',
-      initialValue: true
-    }
+      name: "active",
+      title: "Ativo",
+      type: "boolean",
+      initialValue: true,
+    },
   ],
   orderings: [
     {
-      title: 'Por tempo (crescente)',
-      name: 'triggerAsc',
-      by: [{ field: 'trigger_minutes', direction: 'asc' }]
-    }
-  ]
-}
+      title: "Por tempo (crescente)",
+      name: "triggerAsc",
+      by: [{ field: "trigger_minutes", direction: "asc" }],
+    },
+  ],
+};
 ```
 
 ---
@@ -476,14 +493,14 @@ SANITY_USE_CDN=false         # true em produção, false em dev (para dados fres
 
 Após o Studio estar no ar, criar os seguintes documentos:
 
-| Agente | Tipo | Arquivo fonte |
-|---|---|---|
-| orchestrator | routing | `orchestrator.py:108` → `ROUTING_PROMPT` |
-| orchestrator | synthesis | `orchestrator.py` → `_SYNTHESIS_BASE` |
-| orchestrator | direct | `orchestrator.py` → `_DIRECT_BASE` |
-| focus_guard | deviation | `focus_guard.py:42` → `DEVIATION_PROMPT` |
-| validator | validation | `validator.py:28` → `VALIDATOR_PROMPT` |
-| scheduler | scheduling | `scheduler.py:24` → `SYSTEM_PROMPT` |
+| Agente        | Tipo          | Arquivo fonte                                  |
+| ------------- | ------------- | ---------------------------------------------- |
+| orchestrator  | routing       | `orchestrator.py:108` → `ROUTING_PROMPT`       |
+| orchestrator  | synthesis     | `orchestrator.py` → `_SYNTHESIS_BASE`          |
+| orchestrator  | direct        | `orchestrator.py` → `_DIRECT_BASE`             |
+| focus_guard   | deviation     | `focus_guard.py:42` → `DEVIATION_PROMPT`       |
+| validator     | validation    | `validator.py:28` → `VALIDATOR_PROMPT`         |
+| scheduler     | scheduling    | `scheduler.py:24` → `SYSTEM_PROMPT`            |
 | retrospective | retrospective | `retrospective.py:22` → `RETROSPECTIVE_PROMPT` |
 
 Migrar um por vez. Testar com Sanity. Só remover o hardcode quando validado.

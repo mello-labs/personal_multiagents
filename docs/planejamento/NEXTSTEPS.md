@@ -57,9 +57,9 @@ Se não houve commit ainda, escrever:
 - `web/templates/partials/status.html`
 - `web/templates/partials/task_row.html`
 - `web/templates/tasks_page.html`
-- `docs/CONTRATO_AGENTES.md`
-- `docs/NEXTSTEPS.md`
-- `docs/SPRINT_VIDA.md`
+- `docs/governanca/CONTRATO_AGENTES.md`
+- `docs/planejamento/NEXTSTEPS.md`
+- `docs/planejamento/SPRINT_VIDA.md`
 
 ### Não deve entrar no commit seguro
 
@@ -67,6 +67,7 @@ Se não houve commit ainda, escrever:
 - `dump.rdb`
 
 Motivo:
+
 - arquivo local de ferramenta
 - artefato de estado
 - aumenta ruído e acopla ambiente pessoal ao repo
@@ -118,6 +119,7 @@ Conclusão:
 ## Papel do Gemma Local
 
 Modelo local detectado:
+
 - `docker.io/ai/gemma3:4B-F16`
 - configurado em `config.py`
 - fallback implementado em `core/openai_utils.py`
@@ -169,7 +171,7 @@ Usos não recomendados:
 
 - [x] Fechar contrato operacional de notificações
   - Status: DONE
-  - Log: diagnóstico fechado. `focus_guard` gera alerta no Railway, mas `mac_push` não funciona fora de macOS e Alexa depende de `VOICE_MONKEY_*`. Observabilidade do `notifier` foi reforçada e `SPRINT_VIDA.md` reescrito para distinguir local versus Railway.
+  - Log: diagnóstico fechado. `focus_guard` gera alerta no Railway, mas `mac_push` não funciona fora de macOS e Alexa depende de `VOICE_MONKEY_*`. Observabilidade do `notifier` foi reforçada e `docs/planejamento/SPRINT_VIDA.md` reescrito para distinguir local versus Railway.
   - Commit: pendente
 
 ### Fase 1. Governança dos agentes
@@ -233,18 +235,18 @@ Usos não recomendados:
 
 - [x] Definir schema de domínio `signal`
   - Status: DONE
-  - Log: schema mínimo documentado em `docs/SCHEMA_SIGNAL_DECISION.md` como base da órbita externa do kernel e pré-condição do `ecosystem_monitor`.
-  - Commit: pendente
+  - Log: schema definido no Studio e alinhado ao `docs/arquitetura/SCHEMA_SIGNAL_DECISION.md` como base da órbita externa do kernel.
+  - Commit: `679f390`
 
 - [x] Definir schema de domínio `source`
   - Status: DONE
-  - Log: schema mínimo documentado em `docs/SCHEMA_SIGNAL_DECISION.md` para distinguir origem estrutural de evento e preparar reconciliação entre fontes.
-  - Commit: pendente
+  - Log: schema definido no Studio e alinhado ao `docs/arquitetura/SCHEMA_SIGNAL_DECISION.md` para distinguir origem estrutural de evento.
+  - Commit: `679f390`
 
 - [x] Definir schema de domínio `decision`
   - Status: DONE
-  - Log: schema mínimo documentado em `docs/SCHEMA_SIGNAL_DECISION.md` para consolidar sinais relevantes em resposta governável.
-  - Commit: pendente
+  - Log: schema definido no Studio e alinhado ao `docs/arquitetura/SCHEMA_SIGNAL_DECISION.md` para consolidar sinais em resposta governável.
+  - Commit: `679f390`
 
 - [x] Definir schema de domínio `public_artifact`
   - Status: DONE
@@ -337,8 +339,8 @@ Usos não recomendados:
 ### 2026-04-03
 
 - `SPRINT_ECOSSISTEMA` reposicionado como órbita externa do kernel
-- criado `PLANO_SOBERANIA_SANITY.md`
-- criado `SCHEMA_SIGNAL_DECISION.md`
+- criado `docs/governanca/PLANO_SOBERANIA_SANITY.md`
+- criado `docs/arquitetura/SCHEMA_SIGNAL_DECISION.md`
 - criado `config/ecosystem.yml`
 - criado `config/alert_thresholds.yml`
 - trilhas do plano, sprint e next steps foram amarradas

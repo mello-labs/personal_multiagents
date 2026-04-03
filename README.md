@@ -190,13 +190,13 @@ multiagentes/
 │   ├── templates/           páginas e partials (Jinja2 + HTMX)
 │   └── static/              manifest, service worker, ícones
 ├── docs/
-│   ├── SPRINT_VIDA.md       spec de interrupção cognitiva (implementado)
-│   ├── SPRINT_ECOSSISTEMA.md spec de monitoramento de ecossistema
-│   ├── SANITY_SCHEMA.md     schemas e integração Sanity.io
-│   ├── AUDITORIA_AGENTES.md auditoria de código (13 issues)
-│   ├── MANUAL_USUARIO.md    guia do usuário (PWA)
-│   ├── MANUAL_DEV.md        guia do desenvolvedor
-│   └── GUIAS_REFERENCIA.json referências externas
+│   ├── INDEX.md             índice geral da documentação
+│   ├── governanca/          contratos, matriz e políticas de precedência
+│   ├── arquitetura/         schema e modelo semântico
+│   ├── operacao/            manuais e runbooks operacionais
+│   ├── planejamento/        sprints e trilha de execução
+│   ├── ecossistema/         mapa das orgs e referências externas
+│   └── auditoria/           auditorias e verificações
 ├── personas/
 │   ├── architect.json       persona arquiteto
 │   ├── coordinator.json     persona coordenador
@@ -382,27 +382,31 @@ python main.py calendar status     # Status da integração opcional
 ## Documentation
 
 ```text
-▓▓▓ CORE DOCS
+▓▓▓ ENTRYPOINT
 ────────────────────────────────────────
-└─ ROADMAP.md                  roadmap e próximas frentes
-└─ docs/MANUAL_USUARIO.md      uso do sistema (PWA)
-└─ docs/MANUAL_DEV.md          stack, rotas, design system
+└─ docs/INDEX.md                               índice mestre
+└─ ROADMAP.md                                 roadmap geral do produto
 
-▓▓▓ SPRINTS
+▓▓▓ OPERAÇÃO
 ────────────────────────────────────────
-└─ docs/SPRINT_VIDA.md         interrupção cognitiva e rotinas (implementado)
-└─ docs/SPRINT_ECOSSISTEMA.md  monitoramento de ecossistema
+└─ docs/operacao/MANUAL_USUARIO.md           uso do sistema (PWA)
+└─ docs/operacao/MANUAL_DEV.md               stack, rotas e superfícies
+└─ docs/operacao/redis-weekly-check.md       checklist semanal do Redis
 
-▓▓▓ INTEGRATIONS
+▓▓▓ GOVERNANÇA E ARQUITETURA
 ────────────────────────────────────────
-└─ docs/SANITY_SCHEMA.md       schemas e integração Sanity.io
-└─ docs/AUDITORIA_AGENTES.md   auditoria de código
+└─ docs/governanca/CONTRATO_AGENTES.md       contrato operacional
+└─ docs/governanca/MATRIZ_GOVERNANCA_AGENTES.md
+└─ docs/arquitetura/SANITY_SCHEMA.md          histórico de schema Sanity
+└─ docs/arquitetura/SCHEMA_SIGNAL_DECISION.md ponte semântica externa
 
-▓▓▓ OPERATIONS
+▓▓▓ PLANEJAMENTO E ECOSSISTEMA
 ────────────────────────────────────────
-└─ Makefile                    comandos locais
-└─ railway.json                política de deploy
-└─ Dockerfile                  build de produção
+└─ docs/planejamento/NEXTSTEPS.md            trilha de execução
+└─ docs/planejamento/SPRINT_VIDA.md           sprint vida
+└─ docs/planejamento/SPRINT_ECOSSISTEMA.md    sprint ecossistema
+└─ docs/ecossistema/ECOSSISTEMAS_ORGS.md      mapa das orgs
+└─ docs/ecossistema/ECOSSISTEMA_NEO_PROTOCOL.md
 ```
 
 ────────────────────────────────────────

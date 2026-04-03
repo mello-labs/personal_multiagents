@@ -116,9 +116,7 @@ Campos minimos:
 ```json
 {
   "id": "decision_2026_04_03_review_mypersonal_service",
-  "signal_ids": [
-    "signal_2026_04_03_railway_service_down"
-  ],
+  "signal_ids": ["signal_2026_04_03_railway_service_down"],
   "title": "Review production health of mypersonal_multiagents",
   "summary": "Service instability crossed alert threshold and needs inspection.",
   "priority": "high",
@@ -151,25 +149,31 @@ Enums sugeridos:
 ## Diferencas operacionais
 
 `Signal`:
+
 - fato observavel
 - nao decide nada por si
 
 `Source`:
+
 - origem permanente ou semi-permanente
 - nao e evento
 
 `Decision`:
+
 - interpretacao orientada a acao
 - pode consolidar varios sinais
 
 ## Persistencia recomendada
 
 Redis:
+
 - cache quente de sinais abertos
 - TTL padrao de 24h
 - dedupe e estado corrente
+- nao e fonte de schema
 
 Sanity:
+
 - registro permanente de `Source`
 - registro historico e editorial de `Signal`
 - registro governado de `Decision`
@@ -177,6 +181,7 @@ Sanity:
 ## Regras de reconciliacao
 
 - Redis nunca e a fonte permanente de `Decision`
+- Redis nao define schema nem semantica
 - `Source` nasce canonicamente no Sanity
 - `Signal` pode nascer no Redis e ser promovido ao Sanity
 - `Decision` deve nascer no Sanity ou ser promovida ao
