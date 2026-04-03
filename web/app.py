@@ -56,7 +56,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Multiagentes", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+import jinja2 as _jinja2
+_jinja2_env = _jinja2.Environment(
+    loader=_jinja2.FileSystemLoader(str(BASE_DIR / "templates")),
+    autoescape=True,
+    auto_reload=False,  # workaround: Python 3.14 + Jinja2 3.1.x LRU cache bug
+)
+templates = Jinja2Templates(env=_jinja2_env)
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -721,6 +727,152 @@ async def switch_persona(request: Request, persona_id: str):
         max_age=60 * 60 * 24 * 365,
     )
     return response
+
+
+# ---------------------------------------------------------------------------
+# Ecosystem
+# ---------------------------------------------------------------------------
+
+
+def _ecosystem_ctx(data: dict) -> dict:
+    """Converte dados do health_check em contexto para o template."""
+    import datetime as _dt
+
+    summary = data.get("summary", {})
+    github = data.get("github", {})
+    railway = data.get("railway", {})
+    onchain = data.get("onchain", {})
+
+    # Railway services list
+    railway_services = []
+    for name, info in railway.items():
+        railway_services.append({
+            "name": name,
+            "status": info.get("status", "dim"),
+            "http_code": info.get("http_code"),
+            "response_ms": info.get("response_ms"),
+            "error": info.get("error"),
+            "priority": info.get("priority", "P2"),
+        })
+    # sort: fail first, then warn, then ok; P0 before P1
+    order = {"fail": 0, "warn": 1, "ok": 2, "dim": 3}
+    railway_services.sort(key=lambda s: (order.get(s["status"], 9), s["priority"]))
+
+    # GitHub orgs list
+    github_orgs = []
+    for org, info in github.items():
+        github_orgs.append({
+            "name": org,
+            "status": info.get("status", "dim"),
+            "active_24h": info.get("repos_active_24h", 0),
+            "issues": info.get("open_issues", 0),
+            "stale": info.get("repos_stale", []),
+        })
+
+    # NEOFLW
+    neoflw = onchain.get("NEOFLW", {"status": "dim"})
+
+    # Actions
+    rw_fail = [s["name"] for s in railway_services if s["status"] == "fail"]
+    rw_warn = [s["name"] for s in railway_services if s["status"] == "warn"]
+    stale = summary.get("github", {}).get("repos_stale_priority", [])
+    actions = []
+    if rw_fail:
+        actions.append(f"verificar serviço com falha: {', '.join(rw_fail)}")
+    if rw_warn:
+        actions.append(f"investigar: {', '.join(rw_warn)}")
+    if stale:
+        actions.append(f"repos estagnados: {', '.join(stale[:5])}{'...' if len(stale) > 5 else ''}")
+    if neoflw.get("alerts"):
+        actions.append("monitorar NEOFLW — alertas ativos")
+
+    rw_s = summary.get("railway", {})
+    ts_raw = data.get("timestamp", "")
+    try:
+        ts = _dt.datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+        ts_str = ts.strftime("%H:%M")
+    except Exception:
+        ts_str = ts_raw[:16]
+
+    return {
+        "global_status": data.get("status", "unknown"),
+        "timestamp": ts_str,
+        "railway_ok": rw_s.get("services_ok", 0),
+        "railway_total": rw_s.get("services_total", 0),
+        "railway_warn": rw_s.get("services_warn", 0),
+        "railway_fail": rw_s.get("services_fail", 0),
+        "repos_active": summary.get("github", {}).get("repos_active_24h", 0),
+        "railway_services": railway_services,
+        "github_orgs": github_orgs,
+        "neoflw": neoflw,
+        "actions": actions,
+    }
+
+
+def _load_ecosystem_data() -> dict:
+    """Carrega health check do Redis ou retorna estrutura vazia."""
+    try:
+        raw = memory.get_state("ecosystem:health_check:latest")
+        if isinstance(raw, dict):
+            return raw
+        if isinstance(raw, str):
+            import json
+            return json.loads(raw)
+    except Exception:
+        pass
+    return {"status": "unknown", "summary": {}, "github": {}, "railway": {}, "onchain": {}, "timestamp": ""}
+
+
+@app.get("/ecosystem-page", response_class=HTMLResponse)
+async def ecosystem_page(request: Request):
+    """Página do Ecosystem Monitor."""
+    data = _load_ecosystem_data()
+    ctx = _ecosystem_ctx(data)
+    sum_ctx = _summary_ctx()
+    ctx.update({
+        "request": request,
+        "page_name": "ecosystem",
+        "summary": sum_ctx["summary"],
+        "task_overview": sum_ctx["task_overview"],
+        **_persona_ctx(request),
+    })
+    return templates.TemplateResponse(request, "ecosystem_page.html", ctx)
+
+
+@app.get("/ecosystem", response_class=HTMLResponse)
+async def ecosystem_partial(request: Request):
+    """HTMX partial — refresh automático do conteúdo do ecosystem."""
+    data = _load_ecosystem_data()
+    ctx = _ecosystem_ctx(data)
+    sum_ctx = _summary_ctx()
+    ctx.update({
+        "page_name": "ecosystem",
+        "summary": sum_ctx["summary"],
+        "task_overview": sum_ctx["task_overview"],
+        **_persona_ctx(request),
+    })
+    return templates.TemplateResponse(request, "ecosystem_page.html", ctx)
+
+
+@app.post("/ecosystem/run", response_class=HTMLResponse)
+async def ecosystem_run(request: Request):
+    """Dispara health check e retorna resultado atualizado."""
+    from agents import ecosystem_monitor
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, ecosystem_monitor.health_check)
+
+    data = _load_ecosystem_data()
+    ctx = _ecosystem_ctx(data)
+    sum_ctx = _summary_ctx()
+    ctx.update({
+        "page_name": "ecosystem",
+        "summary": sum_ctx["summary"],
+        "task_overview": sum_ctx["task_overview"],
+        **_persona_ctx(request),
+    })
+    return templates.TemplateResponse(request, "ecosystem_page.html", ctx)
 
 
 # ---------------------------------------------------------------------------
