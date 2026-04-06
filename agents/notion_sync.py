@@ -382,13 +382,19 @@ def sync_tasks_to_local() -> int:
     notion_ids = {nt["notion_page_id"] for nt in notion_tasks if nt.get("notion_page_id")}
     removed = 0
     for lt in memory.list_all_tasks():
-        local_notion_id = lt.get("notion_page_id")
-        if local_notion_id and local_notion_id not in notion_ids:
+        local_notion_id = lt.get("notion_page_id") or ""
+        title = lt.get("title") or ""
+        # Caso 1: tem notion_page_id mas sumiu do Notion → órfã real
+        orphan = local_notion_id and local_notion_id not in notion_ids
+        # Caso 2: notion_page_id vazio + título sentinela → foi criada com título vazio no Notion
+        sentinel = not local_notion_id and title in ("Sem título", "")
+        if orphan or sentinel:
             memory.delete_task(lt["id"])
             removed += 1
+            reason = "não existe mais no Notion" if orphan else "notion_page_id vazio e título inválido"
             notifier.info(
-                f"Tarefa removida do Redis (não existe mais no Notion): "
-                f"id={lt['id']} title='{lt.get('title')}'",
+                f"Tarefa removida do Redis ({reason}): "
+                f"id={lt['id']} title='{title}'",
                 AGENT_NAME,
             )
 
