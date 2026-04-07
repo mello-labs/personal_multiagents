@@ -17,9 +17,9 @@ Objetivo:
 ## Fontes registradas
 
 | ID | Título | Tipo | URL |
-|---|---|---|---|
-| `neo-dashboard-runbook` | NEØ Operations Runbook | runbook operacional | `https://neo-dashboard-production-2e56.up.railway.app/runbook.html` |
-| `neo-dashboard-console` | NΞØ Protocol Control Console | console operacional | `https://neo-dashboard-production-2e56.up.railway.app/` |
+| --- | --- | --- | --- |
+| `neo-dashboard-runbook` | NEØ Operations Runbook | runbook operacional | `https://mypersonal-multiagents.up.railway.app/runbook.html` |
+| `neo-dashboard-console` | NΞØ Protocol Control Console | console operacional | `https://mypersonal-multiagents.up.railway.app/` |
 
 ## Contextos capturados
 

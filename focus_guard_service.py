@@ -14,6 +14,7 @@ Instalar como serviço no macOS (launchd):
 Instalar como serviço no Linux (systemd):
     bash scripts/install_systemd.sh
 """
+
 import sys
 import os
 import signal

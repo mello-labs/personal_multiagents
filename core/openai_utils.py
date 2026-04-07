@@ -34,6 +34,7 @@ def _get_local_client() -> OpenAI:
     if _local_client is None:
         try:
             import httpx
+
             transport = httpx.HTTPTransport(uds=_DOCKER_SOCKET)
             http_client = httpx.Client(transport=transport)
             _local_client = OpenAI(

@@ -101,16 +101,19 @@ O badge de notificacao (`.tab-badge`) e renderizado server-side com base em `sum
 ## PWA
 
 ### manifest.json
+
 - `display: standalone` — abre sem barra do browser
 - `orientation: portrait`
 - Icons 192 e 512
 
 ### Service worker (sw.js)
+
 - **Cache**: precache de `/` e manifest. Static files = cache-first, HTML/API = network-first com fallback
 - **Push**: handler pronto em `self.addEventListener('push', ...)` — aceita JSON com `{title, body, tag, url}`
 - **Notification click**: abre/foca a URL do payload
 
 ### Para ativar push notifications no futuro:
+
 1. Gerar par de chaves VAPID (`npx web-push generate-vapid-keys`)
 2. Adicionar endpoint no backend para subscription (`POST /push/subscribe`)
 3. No frontend, pedir permissao e enviar subscription ao backend

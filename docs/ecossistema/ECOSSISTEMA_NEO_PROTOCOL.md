@@ -1,7 +1,7 @@
 # ECOSSISTEMA NEO-PROTOCOL
 
 Status: ativo
-Última atualização: 2026-04-03
+Última atualização: 2026-04-06
 
 ## Propósito
 
@@ -20,34 +20,27 @@ escalar para revisão humana.
 ## Identidade pública
 
 | Superfície | URL | Papel |
-|---|---|---|
+| --- | --- | --- |
 | Identidade ENS | `neomello.eth.limo` | Perfil público, exposição de projetos e ideias |
 | Org GitHub | `github.com/NEO-PROTOCOL` | Organização técnica, repos e roadmap |
-| Dashboard | `dashboard.neoprotocol.space` | Console de controle operacional |
+| Dashboard | `mypersonal-multiagents.up.railway.app` | Console de controle operacional |
 | Token | NEOFLW · Base Mainnet | `0x41F4ff3d45DED9C1332e4908F637B75fe83F5d6B` |
 
 ---
 
 ## Repositórios da org NEO-PROTOCOL
 
-### `neobot`
-- `github.com/NEO-PROTOCOL/neobot`
-- **O que é:** Orquestrador soberano do ecossistema. Nó central,
-  gateway multi-canal (WhatsApp, Telegram, Slack, Discord, LINE),
-  Skills Registry via IPFS, Plugin SDK.
-- **Stack:** TypeScript / Node.js / Express / ethers.js / IPFS
-- **Deploy:** Railway + local macOS
-- **Monitorar:** uptime, webhook health, canal Telegram, Skills Registry
-
 ### `neo-dashboard`
+
 - `github.com/NEO-PROTOCOL/neo-dashboard`
 - **O que é:** Console de controle operacional. Interface "Analyzer /
   Control / Topology". Superfície primária de leitura de sinais e
   estado do ecossistema.
-- **Deploy:** `dashboard.neoprotocol.space` / `neo-dashboard-production-2e56.up.railway.app`
+- **Deploy:** `mypersonal-multiagents.up.railway.app`
 - **Monitorar:** uptime, último deploy, health check
 
 ### `neo-mello-eth`
+
 - `github.com/NEO-PROTOCOL/neo-mello-eth`
 - **O que é:** Site público de identidade de NEØ MELLØ.
   Canal de exposição de ideias, projetos e artefatos públicos.
@@ -57,6 +50,7 @@ escalar para revisão humana.
 - **Monitorar:** uptime, último deploy, health do Redis Railway
 
 ### `mio-system`
+
 - `github.com/NEO-PROTOCOL/mio-system`
 - **O que é:** Camada de identidade Web3. Gerencia as 9 identidades
   MIO (mio-core, mio-warrior, mio-factory, mio-gateway...).
@@ -65,6 +59,7 @@ escalar para revisão humana.
 - **Monitorar:** health da API, status das identidades
 
 ### `neoflw-base-landing`
+
 - `github.com/NEO-PROTOCOL/neoflw-base-landing`
 - **O que é:** Landing page do token NEOFLW (Base Mainnet).
   Site estático de verificação e informação do token.
@@ -72,6 +67,7 @@ escalar para revisão humana.
 - **Monitorar:** uptime, contrato on-chain
 
 ### `.github`
+
 - **O que é:** Perfil da org, arquitetura, diretivas e definições
   críticas do protocolo. Documentação central da org.
 - **Monitorar:** PRs e issues abertas
@@ -85,6 +81,7 @@ escalar para revisão humana.
 Fases identificadas via `ecosystem.json` do neobot:
 
 ### Fase 1 — Operacional (🟢)
+
 - Neobot Orchestrator (nó soberano) — ATIVO
 - MIO System (camada de identidade) — ATIVO
 - NEO Nexus (event hub/relay) — ATIVO no Railway
@@ -92,12 +89,14 @@ Fases identificadas via `ecosystem.json` do neobot:
 - Lighthouse Storage (IPFS pinning) — ATIVO
 
 ### Fase 2 — Configuração pendente (🟡)
+
 - Neo Dashboard (console de controle) — deploy ok, requer config
 - Smart Factory Hub (Web3 engineering) — integração ativa
 - WhatsApp Channel Automation — setup necessário
 - Notion Sync para lead reporting — em desenvolvimento
 
 ### Fase 3 — Roadmap futuro (🔵)
+
 - Kwil DB (memória descentralizada) — planejado
 - Storacha/Ceramic (storage soberano) — planejado
 - Camada de governança distribuída — planejado
@@ -107,7 +106,7 @@ Fases identificadas via `ecosystem.json` do neobot:
 ## Conexões críticas da org
 
 | Conexão | Status | Risco se quebrar |
-|---|---|---|
+| --- | --- | --- |
 | Nexus ↔ Neobot | VITAL | perda de trilha de auditoria |
 | Agent Full ↔ Nexus | VITAL | alucinação sistêmica dos agentes |
 | FlowPay ↔ Nexus | VITAL | paralisia financeira |
@@ -117,7 +116,7 @@ Fases identificadas via `ecosystem.json` do neobot:
 
 ## Relação com o OS pessoal
 
-```
+```text
 mypersonal_multiagents (kernel íntimo)
     ↓ tarefas pessoais de manutenção
 NEO-PROTOCOL org (ecossistema externo)
@@ -139,21 +138,25 @@ A org NEO-PROTOCOL é o ecossistema técnico externo.
 ## O que o `ecosystem_monitor` deve observar
 
 ### GitHub
+
 - PRs abertas em repos da org
 - Issues abertas por prioridade
 - Último commit por repo (detectar repos estagnados)
 - Status do Project Board `projects/1`
 
 ### Railway
+
 - Uptime de `neo-dashboard` (serviço `neo-mello-eth` + Redis)
 - Último deploy de cada serviço
 - Health check dos endpoints
 
 ### On-chain
+
 - Contrato NEOFLW: `0x41F4ff3d45DED9C1332e4908F637B75fe83F5d6B` (Base)
 - Holders, volume, última transação relevante
 
 ### ENS / Domínios
+
 - `neomello.eth.limo` resolvendo corretamente
 - `neoprotocol.space` ativo
 - `neoflowoff.eth.limo` ativo
@@ -175,10 +178,10 @@ A org NEO-PROTOCOL é o ecossistema técnico externo.
 ## Acesso rápido
 
 | Recurso | URL |
-|---|---|
+| --- | --- |
 | Org GitHub | `github.com/NEO-PROTOCOL` |
 | Project Board | `github.com/orgs/NEO-PROTOCOL/projects/1` |
-| Dashboard | `dashboard.neoprotocol.space` |
+| Dashboard | `mypersonal-multiagents.up.railway.app` |
 | Identidade pública | `neomello.eth.limo` |
 | Railway (neo-mello-eth) | `neomelloeth.up.railway.app` |
 | Token Basescan | `basescan.org/token/0x41F4ff3d45DED9C1332e4908F637B75fe83F5d6B` |

@@ -1,5 +1,5 @@
 # =============================================================================
-# Makefile — Multiagentes Personal System
+# Makefile - Multiagentes Personal System
 # =============================================================================
 # Uso: make <comando>
 # Dica: make help  →  lista todos os comandos disponíveis
@@ -27,10 +27,14 @@ RESET  := $(shell printf '\033[0m')
 .PHONY: help
 help: ## Exibe esta ajuda
 	@echo ""
-	@echo "  $(BOLD)$(CYAN)Multiagentes — Comandos disponíveis$(RESET)"
+	@echo "  $(BOLD)$(CYAN)Multiagentes - Comandos disponíveis$(RESET)"
 	@echo ""
-	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ { \
-		printf "  $(GREEN)%-22s$(RESET) %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS=":.*##"; cat=""} \
+		/^# [A-Z0-9][A-Z0-9 ()&_-]*$$/ { \
+			cat=$$0; sub(/^# +/,"",cat); \
+			printf "\n  $(BOLD)$(CYAN)%s$(RESET)\n\n", cat } \
+		/^[a-zA-Z_-]+:.*##/ { \
+			printf "  $(GREEN)%-22s$(RESET) %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@echo ""
 
 # =============================================================================
@@ -39,7 +43,7 @@ help: ## Exibe esta ajuda
 
 .PHONY: build
 build: install ## Alias Railway-friendly: instala dependências (projeto Python, sem transpile)
-	@echo "$(GREEN)✓ Build concluído — use 'make dev' para iniciar$(RESET)"
+	@echo "$(GREEN)✓ Build concluído - use 'make dev' para iniciar$(RESET)"
 
 .PHONY: setup
 setup: venv install env-copy redis-pull ## Configura tudo do zero (venv + deps + .env)
@@ -57,8 +61,8 @@ install: venv ## Instala dependências Python
 	@echo "$(GREEN)✓ Dependências instaladas$(RESET)"
 
 .PHONY: install-dev
-install-dev: install ## Instala dependências + extras dev (ipython, ruff, etc.)
-	@$(PIP) install ipython rich watchdog ruff pytest-cov pytest-watch -q
+install-dev: install ## Instala dependências + extras dev (ipython, ruff, pylyzer, etc.)
+	@$(PIP) install ipython rich watchdog ruff pytest-cov pytest-watch pylyzer -q
 	@echo "$(GREEN)✓ Dev extras instalados$(RESET)"
 
 .PHONY: redis-pull
@@ -100,28 +104,38 @@ guard: redis-ensure ## Inicia Focus Guard no terminal
 	@$(PY) main.py
 
 # =============================================================================
-# REDIS LOCAL (brew service — nativo macOS)
+# REDIS LOCAL (BREW SERVICE - MACOS)
 # =============================================================================
 
 REDIS_CONTAINER := multiagentes-redis
-BREW := /opt/homebrew/bin/brew
+BREW := $(shell command -v brew 2>/dev/null || echo /opt/homebrew/bin/brew)
+REDIS_CLI := $(shell command -v redis-cli 2>/dev/null || echo /opt/homebrew/opt/redis/bin/redis-cli)
+REDIS_HOST := 127.0.0.1
+REDIS_PORT := 6379
 
 .PHONY: brew-redis
 brew-redis: ## Instala Redis via Homebrew e inicia como serviço permanente
+	@[ -x "$(BREW)" ] || (echo "$(RED)✗ brew não encontrado. Instale Homebrew ou use Docker com: make redis-up$(RESET)"; exit 1)
 	@$(BREW) install redis
 	@$(BREW) services start redis
 	@echo "$(GREEN)✓ Redis instalado e rodando via brew$(RESET)"
 
 .PHONY: redis-up
 redis-up: ## Garante que Redis está rodando (brew service → Docker fallback)
-	@/opt/homebrew/opt/redis/bin/redis-cli ping > /dev/null 2>&1 && \
-		echo "$(GREEN)✓ Redis rodando em localhost:6379 (brew service)$(RESET)" && exit 0; \
-	$(BREW) services start redis > /dev/null 2>&1 && sleep 0.5 && \
-		/opt/homebrew/opt/redis/bin/redis-cli ping > /dev/null 2>&1 && \
-		echo "$(GREEN)✓ Redis iniciado via brew services$(RESET)" && exit 0; \
+	@set -e; \
+	if [ -x "$(REDIS_CLI)" ] && "$(REDIS_CLI)" -h "$(REDIS_HOST)" -p "$(REDIS_PORT)" ping > /dev/null 2>&1; then \
+		echo "$(GREEN)✓ Redis rodando em $(REDIS_HOST):$(REDIS_PORT)$(RESET)"; exit 0; \
+	fi; \
+	if [ -x "$(BREW)" ]; then \
+		"$(BREW)" services start redis > /dev/null 2>&1 || true; \
+		sleep 0.5; \
+	fi; \
+	if [ -x "$(REDIS_CLI)" ] && "$(REDIS_CLI)" -h "$(REDIS_HOST)" -p "$(REDIS_PORT)" ping > /dev/null 2>&1; then \
+		echo "$(GREEN)✓ Redis iniciado via brew services$(RESET)"; exit 0; \
+	fi; \
 	docker run -d --rm \
 		--name $(REDIS_CONTAINER) \
-		-p 6379:6379 \
+		-p $(REDIS_PORT):6379 \
 		redis:7-alpine \
 		> /dev/null 2>&1 || true; \
 	sleep 0.5; \
@@ -129,29 +143,60 @@ redis-up: ## Garante que Redis está rodando (brew service → Docker fallback)
 
 .PHONY: redis-ensure
 redis-ensure: ## Garante que Redis está respondendo antes de rodar agentes
-	@/opt/homebrew/opt/redis/bin/redis-cli ping > /dev/null 2>&1 && exit 0; \
-	$(BREW) services start redis > /dev/null 2>&1; \
-	sleep 0.6; \
-	/opt/homebrew/opt/redis/bin/redis-cli ping > /dev/null 2>&1 && exit 0; \
-	echo "$(RED)✗ Redis indisponível. Rode: make brew-redis$(RESET)"; \
+	@set -e; \
+	if [ -x "$(REDIS_CLI)" ] && "$(REDIS_CLI)" -h "$(REDIS_HOST)" -p "$(REDIS_PORT)" ping > /dev/null 2>&1; then exit 0; fi; \
+	if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$(REDIS_CONTAINER)"; then \
+		docker exec "$(REDIS_CONTAINER)" redis-cli ping > /dev/null 2>&1 && exit 0; \
+	fi; \
+	$(MAKE) redis-up > /dev/null; \
+	if [ -x "$(REDIS_CLI)" ] && "$(REDIS_CLI)" -h "$(REDIS_HOST)" -p "$(REDIS_PORT)" ping > /dev/null 2>&1; then exit 0; fi; \
+	if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$(REDIS_CONTAINER)"; then \
+		docker exec "$(REDIS_CONTAINER)" redis-cli ping > /dev/null 2>&1 && exit 0; \
+	fi; \
+	echo "$(RED)✗ Redis indisponível. Tente: make brew-redis (recomendado) ou make redis-up$(RESET)"; \
 	exit 1
 
 .PHONY: redis-down
-redis-down: ## Para o Redis local Docker
+redis-down: ## Para Redis local (brew e/ou Docker)
+	@[ -x "$(BREW)" ] && "$(BREW)" services stop redis > /dev/null 2>&1 || true
 	@docker stop $(REDIS_CONTAINER) 2>/dev/null || true
 	@echo "$(YELLOW)✓ Redis parado$(RESET)"
 
 .PHONY: redis-cli
 redis-cli: ## Abre Redis CLI interativo
-	@docker exec -it $(REDIS_CONTAINER) redis-cli
+	@set -e; \
+	if [ -x "$(REDIS_CLI)" ]; then \
+		"$(REDIS_CLI)" -h "$(REDIS_HOST)" -p "$(REDIS_PORT)"; exit 0; \
+	fi; \
+	if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$(REDIS_CONTAINER)"; then \
+		docker exec -it "$(REDIS_CONTAINER)" redis-cli; exit 0; \
+	fi; \
+	echo "$(RED)✗ redis-cli indisponível. Instale redis (brew install redis) ou suba via Docker (make redis-up)$(RESET)"; \
+	exit 1
 
 .PHONY: redis-keys
 redis-keys: ## Lista todas as chaves no Redis (ordenadas)
-	@docker exec $(REDIS_CONTAINER) redis-cli KEYS '*' | sort
+	@set -e; \
+	if [ -x "$(REDIS_CLI)" ]; then \
+		"$(REDIS_CLI)" -h "$(REDIS_HOST)" -p "$(REDIS_PORT)" KEYS '*' | sort; exit 0; \
+	fi; \
+	if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$(REDIS_CONTAINER)"; then \
+		docker exec "$(REDIS_CONTAINER)" redis-cli KEYS '*' | sort; exit 0; \
+	fi; \
+	echo "$(RED)✗ Redis não está acessível. Rode: make redis-up$(RESET)"; \
+	exit 1
 
 .PHONY: redis-stats
 redis-stats: ## Exibe estatísticas do Redis (memória, conexões, etc.)
-	@docker exec $(REDIS_CONTAINER) redis-cli INFO stats | grep -E "connected|commands|memory|keys"
+	@set -e; \
+	if [ -x "$(REDIS_CLI)" ]; then \
+		"$(REDIS_CLI)" -h "$(REDIS_HOST)" -p "$(REDIS_PORT)" INFO stats | grep -E "connected|commands|memory|keys"; exit 0; \
+	fi; \
+	if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$(REDIS_CONTAINER)"; then \
+		docker exec "$(REDIS_CONTAINER)" redis-cli INFO stats | grep -E "connected|commands|memory|keys"; exit 0; \
+	fi; \
+	echo "$(RED)✗ Redis não está acessível. Rode: make redis-up$(RESET)"; \
+	exit 1
 
 .PHONY: redis-weekly
 redis-weekly: ## Exibe checklist semanal do Redis na Railway (5 min)
@@ -161,12 +206,24 @@ redis-weekly: ## Exibe checklist semanal do Redis na Railway (5 min)
 redis-flush: ## ⚠️  Apaga TODOS os dados do Redis local
 	@echo "$(RED)⚠️  Isso apaga TODOS os dados locais!$(RESET)"
 	@read -p "Confirma? [s/N] " c && [ "$$c" = "s" ] && \
-		docker exec $(REDIS_CONTAINER) redis-cli FLUSHALL && \
+		( if [ -x "$(REDIS_CLI)" ]; then \
+			"$(REDIS_CLI)" -h "$(REDIS_HOST)" -p "$(REDIS_PORT)" FLUSHALL; \
+		else \
+			docker exec "$(REDIS_CONTAINER)" redis-cli FLUSHALL; \
+		fi ) && \
 		echo "$(YELLOW)✓ Redis limpo$(RESET)" || echo "Cancelado."
 
 .PHONY: redis-ping
 redis-ping: ## Testa conexão Redis
-	@docker exec $(REDIS_CONTAINER) redis-cli PING
+	@set -e; \
+	if [ -x "$(REDIS_CLI)" ]; then \
+		"$(REDIS_CLI)" -h "$(REDIS_HOST)" -p "$(REDIS_PORT)" PING; exit 0; \
+	fi; \
+	if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$(REDIS_CONTAINER)"; then \
+		docker exec "$(REDIS_CONTAINER)" redis-cli PING; exit 0; \
+	fi; \
+	echo "$(RED)✗ Redis não está acessível. Rode: make redis-up$(RESET)"; \
+	exit 1
 
 # =============================================================================
 # AGENTES
@@ -204,6 +261,14 @@ calendar-import: redis-ensure ## Importa eventos de hoje do Google Calendar
 calendar-status: redis-ensure ## Status da integração Google Calendar
 	@$(PY) main.py calendar status
 
+.PHONY: web
+web: ## Inicia interface web (modo estável, sem hot-reload)
+	@$(PY) main.py web
+
+.PHONY: vida
+vida: redis-ensure ## Status das rotinas pessoais do dia (Life Guard)
+	@$(PY) main.py vida
+
 .PHONY: chat
 chat: redis-ensure ## Modo chat interativo com o Orchestrator
 	@$(PY) main.py chat
@@ -234,7 +299,7 @@ test-watch: ## Roda testes automaticamente ao salvar (watch mode)
 	@$(VENV)/bin/ptw tests/ -- -v
 
 # =============================================================================
-# QUALIDADE DE CÓDIGO
+# QUALIDADE DE CODIGO
 # =============================================================================
 
 .PHONY: lint
@@ -284,7 +349,7 @@ diff: ## Git diff staged
 	@git diff --staged
 
 # =============================================================================
-# DIAGNÓSTICO & AMBIENTE
+# DIAGNOSTICO & AMBIENTE
 # =============================================================================
 
 .PHONY: env-check
@@ -295,7 +360,7 @@ env-check: ## Verifica variáveis de ambiente obrigatórias
 .PHONY: env-copy
 env-copy: ## Copia .env.example → .env (se não existir)
 	@test -f .env && echo ".env já existe" || \
-		(cp .env.example .env && echo "$(YELLOW)✓ .env criado — preencha as chaves!$(RESET)")
+		(cp .env.example .env && echo "$(YELLOW)✓ .env criado - preencha as chaves!$(RESET)")
 
 .PHONY: health
 health: ## Checa o endpoint /health (app local)
@@ -354,4 +419,4 @@ clean: ## Remove cache Python e arquivos temporários
 .PHONY: clean-all
 clean-all: clean redis-down ## Remove cache + venv + para Redis (reset total)
 	@rm -rf $(VENV)
-	@echo "$(YELLOW)✓ Reset completo — rode: make setup$(RESET)"
+	@echo "$(YELLOW)✓ Reset completo - rode: make setup$(RESET)"

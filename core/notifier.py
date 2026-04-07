@@ -4,6 +4,7 @@
 # Exibe mensagens coloridas no terminal e persiste tudo em arquivo de log.
 # Os agentes chamam as funções deste módulo para comunicar eventos.
 
+
 import logging
 import os
 import sys
@@ -37,12 +38,16 @@ _IS_RAILWAY = bool(
 )
 _FORCE_COLOR = os.getenv("FORCE_COLOR", "").lower() in {"1", "true", "yes"}
 _NO_COLOR = os.getenv("NO_COLOR") is not None
-_USE_COLOR = _FORCE_COLOR or (sys.stdout.isatty() and not _NO_COLOR and not _IS_RAILWAY)
+_USE_COLOR = _FORCE_COLOR or (
+    sys.stdout.isatty() and not _NO_COLOR and not _IS_RAILWAY
+)
 
 
 # ---------------------------------------------------------------------------
 # Configuração do logger Python padrão
 # ---------------------------------------------------------------------------
+
+
 def _setup_logger() -> logging.Logger:
     log_path = Path(LOG_FILE)
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -187,10 +192,7 @@ def mac_push(title: str, message: str, sound: bool = False) -> None:
         return
 
     sound_line = ' sound name "Sosumi"' if sound else ""
-    script = (
-        f'display notification "{message}" '
-        f'with title "{title}"{sound_line}'
-    )
+    script = f'display notification "{message}" with title "{title}"{sound_line}'
     try:
         result = subprocess.run(
             ["osascript", "-e", script],
@@ -281,9 +283,7 @@ def banner() -> None:
 # ---------------------------------------------------------------------------
 # Exibição de tabela simples no terminal
 # ---------------------------------------------------------------------------
-def print_table(
-    headers: list[str], rows: list[list[str]], title: str = ""
-) -> None:
+def print_table(headers: list[str], rows: list[list[str]], title: str = "") -> None:
     """Imprime uma tabela formatada no terminal."""
     if title:
         separator(title)

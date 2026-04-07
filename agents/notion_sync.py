@@ -367,7 +367,8 @@ def sync_tasks_to_local() -> int:
                 priority=nt["priority"] or existing.get("priority") or "Média",
                 scheduled_time=nt.get("scheduled_time"),
                 actual_time=nt.get("actual_time"),
-                notion_page_id=nt.get("notion_page_id") or existing.get("notion_page_id"),
+                notion_page_id=nt.get("notion_page_id")
+                or existing.get("notion_page_id"),
             )
             if nt.get("status"):
                 memory.update_task_status(
@@ -379,7 +380,9 @@ def sync_tasks_to_local() -> int:
             _maybe_create_agenda_block(existing["id"], nt)
 
     # Reconciliação: remove do Redis tarefas que já não existem no Notion
-    notion_ids = {nt["notion_page_id"] for nt in notion_tasks if nt.get("notion_page_id")}
+    notion_ids = {
+        nt["notion_page_id"] for nt in notion_tasks if nt.get("notion_page_id")
+    }
     removed = 0
     for lt in memory.list_all_tasks():
         local_notion_id = lt.get("notion_page_id") or ""
@@ -391,10 +394,13 @@ def sync_tasks_to_local() -> int:
         if orphan or sentinel:
             memory.delete_task(lt["id"])
             removed += 1
-            reason = "não existe mais no Notion" if orphan else "notion_page_id vazio e título inválido"
+            reason = (
+                "não existe mais no Notion"
+                if orphan
+                else "notion_page_id vazio e título inválido"
+            )
             notifier.info(
-                f"Tarefa removida do Redis ({reason}): "
-                f"id={lt['id']} title='{title}'",
+                f"Tarefa removida do Redis ({reason}): id={lt['id']} title='{title}'",
                 AGENT_NAME,
             )
 

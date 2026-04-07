@@ -109,7 +109,9 @@ def _load_personas() -> None:
         pass
     if _active_persona_id not in _personas:
         _active_persona_id = (
-            _DEFAULT_PERSONA_ID if _DEFAULT_PERSONA_ID in _personas else next(iter(_personas), _DEFAULT_PERSONA_ID)
+            _DEFAULT_PERSONA_ID
+            if _DEFAULT_PERSONA_ID in _personas
+            else next(iter(_personas), _DEFAULT_PERSONA_ID)
         )
 
 
@@ -193,5 +195,9 @@ def get_temperature(persona_id: Optional[str] = None, phase: str = "direct") -> 
     persona = get_persona(persona_id)
     params = persona.get("parameters", {})
     key = f"temperature_{phase}"
-    defaults = {"temperature_routing": 0.2, "temperature_synthesis": 0.5, "temperature_direct": 0.7}
+    defaults = {
+        "temperature_routing": 0.2,
+        "temperature_synthesis": 0.5,
+        "temperature_direct": 0.7,
+    }
     return params.get(key, defaults.get(key, 0.5))

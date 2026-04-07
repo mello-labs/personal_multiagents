@@ -8,6 +8,7 @@
 #           uvicorn web.app:app --reload --port 8000
 
 import asyncio
+import jinja2 as _jinja2
 import json
 import os
 import sys
@@ -59,7 +60,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Multiagentes", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-import jinja2 as _jinja2
+
 
 _jinja2_env = _jinja2.Environment(
     loader=_jinja2.FileSystemLoader(str(BASE_DIR / "templates")),
@@ -517,9 +518,7 @@ async def dismiss_all_alerts():
     pending = _safe(lambda: memory.get_pending_alerts(), []) or []
     for alert in pending:
         _safe(lambda a=alert: memory.acknowledge_alert(a["id"]), None)
-    return HTMLResponse(
-        '<div class="empty">Sem alertas pendentes</div>'
-    )
+    return HTMLResponse('<div class="empty">Sem alertas pendentes</div>')
 
 
 @app.get("/agenda", response_class=HTMLResponse)

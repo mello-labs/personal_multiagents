@@ -13,9 +13,9 @@ from typing import Any, Optional
 import requests
 
 SANITY_PROJECT_ID: str = os.getenv("SANITY_PROJECT_ID", "")
-SANITY_DATASET: str    = os.getenv("SANITY_DATASET", "production")
-SANITY_API_TOKEN: str  = os.getenv("SANITY_API_TOKEN", "")
-SANITY_CDN: bool       = os.getenv("SANITY_USE_CDN", "false").lower() == "true"
+SANITY_DATASET: str = os.getenv("SANITY_DATASET", "production")
+SANITY_API_TOKEN: str = os.getenv("SANITY_API_TOKEN", "")
+SANITY_CDN: bool = os.getenv("SANITY_USE_CDN", "false").lower() == "true"
 
 _CACHE: dict[str, tuple[Any, float]] = {}
 CACHE_TTL = 300  # 5 minutos
@@ -103,9 +103,7 @@ def get_all_personas() -> list:
 
 def get_agent_config(agent_name: str) -> Optional[dict]:
     """Busca configuração de um agente (intervalo, enabled, parâmetros)."""
-    return _query(
-        f'*[_type == "agent_config" && agent_name == "{agent_name}"][0]'
-    )
+    return _query(f'*[_type == "agent_config" && agent_name == "{agent_name}"][0]')
 
 
 def get_agent_parameters(agent_name: str) -> dict:
@@ -115,6 +113,7 @@ def get_agent_parameters(agent_name: str) -> dict:
     Retorna {} se o agente não existir ou não tiver parâmetros.
     """
     import json as _json
+
     cfg = get_agent_config(agent_name)
     if not cfg:
         return {}
@@ -149,9 +148,12 @@ def get_intervention_scripts(agent_name: Optional[str] = None) -> list:
     Usado pelo Focus Guard para substituir o ESCALATION_LEVELS hardcoded.
     """
     agent_filter = f' && agent_name == "{agent_name}"' if agent_name else ""
-    return _query(
-        f'*[_type == "intervention_script" && active == true{agent_filter}] | order(trigger_minutes asc)'
-    ) or []
+    return (
+        _query(
+            f'*[_type == "intervention_script" && active == true{agent_filter}] | order(trigger_minutes asc)'
+        )
+        or []
+    )
 
 
 # ---------------------------------------------------------------------------

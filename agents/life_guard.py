@@ -28,36 +28,36 @@ AGENT_NAME = "life_guard"
 
 DAILY_ROUTINES = [
     {
-        "id":       "exercise",
-        "name":     "Exercício",
+        "id": "exercise",
+        "name": "Exercício",
         "check_at": "07:00",
-        "message":  "Você se exercitou hoje?",
-        "channel":  "mac",
-        "sound":    False,
+        "message": "Você se exercitou hoje?",
+        "channel": "mac",
+        "sound": False,
     },
     {
-        "id":       "shower",
-        "name":     "Banho",
+        "id": "shower",
+        "name": "Banho",
         "check_at": "10:00",
-        "message":  "Hora do banho.",
-        "channel":  "mac",
-        "sound":    False,
+        "message": "Hora do banho.",
+        "channel": "mac",
+        "sound": False,
     },
     {
-        "id":       "lunch",
-        "name":     "Almoco",
+        "id": "lunch",
+        "name": "Almoco",
         "check_at": "12:30",
-        "message":  "Parar para almocar.",
-        "channel":  "mac+alexa",
-        "sound":    False,
+        "message": "Parar para almocar.",
+        "channel": "mac+alexa",
+        "sound": False,
     },
     {
-        "id":       "dinner",
-        "name":     "Jantar",
+        "id": "dinner",
+        "name": "Jantar",
         "check_at": "19:30",
-        "message":  "Parar para jantar.",
-        "channel":  "mac",
-        "sound":    False,
+        "message": "Parar para jantar.",
+        "channel": "mac",
+        "sound": False,
     },
 ]
 
@@ -100,7 +100,9 @@ def check_daily_routines() -> list:
 
         # janela de 30 minutos após o horário programado
         if scheduled_dt <= now <= scheduled_dt + timedelta(minutes=30):
-            _dispatch(routine["message"], routine["channel"], routine.get("sound", False))
+            _dispatch(
+                routine["message"], routine["channel"], routine.get("sound", False)
+            )
             memory.set_state(state_key, "sent")
             triggered.append(routine["id"])
 
@@ -180,12 +182,15 @@ def check_finances() -> list:
 def run_all_checks() -> dict:
     """Entry point para o loop de background."""
     if not sanity_client.is_agent_enabled(AGENT_NAME, default=True):
-        notifier.info("Life Guard desabilitado via Sanity (agent_config.enabled=false).", AGENT_NAME)
+        notifier.info(
+            "Life Guard desabilitado via Sanity (agent_config.enabled=false).",
+            AGENT_NAME,
+        )
         return {"routines": [], "hydration": {}, "finances": []}
     return {
-        "routines":  check_daily_routines(),
+        "routines": check_daily_routines(),
         "hydration": check_hydration(),
-        "finances":  check_finances(),
+        "finances": check_finances(),
     }
 
 

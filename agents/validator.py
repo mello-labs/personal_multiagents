@@ -55,12 +55,15 @@ Critérios para "pending_confirmation":
 
 
 def _get_validator_prompt() -> str:
-    return sanity_client.get_prompt("validator", "validation", _VALIDATOR_PROMPT_FALLBACK)
+    return sanity_client.get_prompt(
+        "validator", "validation", _VALIDATOR_PROMPT_FALLBACK
+    )
 
 
 # ---------------------------------------------------------------------------
 # Coleta de evidências de conclusão
 # ---------------------------------------------------------------------------
+
 
 def gather_evidence(task_id: int) -> dict:
     """
@@ -80,7 +83,11 @@ def gather_evidence(task_id: int) -> dict:
         try:
             notion_tasks = _notion_sync.fetch_notion_tasks()
             notion_data = next(
-                (nt for nt in notion_tasks if nt["notion_page_id"] == task["notion_page_id"]),
+                (
+                    nt
+                    for nt in notion_tasks
+                    if nt["notion_page_id"] == task["notion_page_id"]
+                ),
                 None,
             )
         except Exception as e:
@@ -113,8 +120,7 @@ def check_data_consistency(evidence: dict) -> dict:
         "block_completed": any(b.get("completed") for b in blocks),
         "notion_synced": notion is not None and "error" not in str(notion),
         "notion_status_matches": (
-            notion is not None
-            and notion.get("status") == task.get("status")
+            notion is not None and notion.get("status") == task.get("status")
             if notion and "error" not in str(notion)
             else None
         ),
@@ -122,11 +128,16 @@ def check_data_consistency(evidence: dict) -> dict:
 
     # Score de consistência (0-100)
     score = 0
-    if flags["local_status_is_done"]:   score += 30
-    if flags["has_actual_time"]:        score += 20
-    if flags["has_completed_session"]:  score += 25
-    if flags["block_completed"]:        score += 15
-    if flags["notion_status_matches"]:  score += 10
+    if flags["local_status_is_done"]:
+        score += 30
+    if flags["has_actual_time"]:
+        score += 20
+    if flags["has_completed_session"]:
+        score += 25
+    if flags["block_completed"]:
+        score += 15
+    if flags["notion_status_matches"]:
+        score += 10
 
     flags["consistency_score"] = score
     return flags
@@ -135,6 +146,7 @@ def check_data_consistency(evidence: dict) -> dict:
 # ---------------------------------------------------------------------------
 # Validação via LLM
 # ---------------------------------------------------------------------------
+
 
 def validate_with_llm(evidence: dict, flags: dict) -> dict:
     """
@@ -170,7 +182,7 @@ Emita seu veredicto em JSON puro (sem markdown).
                 {"role": "system", "content": _get_validator_prompt()},
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.1,   # Baixa temperatura: queremos análise determinística
+            temperature=0.1,  # Baixa temperatura: queremos análise determinística
             response_format={"type": "json_object"},
         )
         return json.loads(response.choices[0].message.content)
@@ -198,7 +210,9 @@ Emita seu veredicto em JSON puro (sem markdown).
             return {
                 "verdict": "rejected",
                 "confidence": (100 - score) / 100,
-                "reasons": ["Dados insuficientes ou inconsistentes para validar conclusão."],
+                "reasons": [
+                    "Dados insuficientes ou inconsistentes para validar conclusão."
+                ],
                 "questions": [],
                 "recommendation": "Verifique se a tarefa foi realmente concluída antes de marcá-la.",
             }
@@ -207,6 +221,7 @@ Emita seu veredicto em JSON puro (sem markdown).
 # ---------------------------------------------------------------------------
 # Ação após validação
 # ---------------------------------------------------------------------------
+
 
 def apply_verdict(task_id: int, verdict: dict) -> dict:
     """
@@ -233,7 +248,8 @@ def apply_verdict(task_id: int, verdict: dict) -> dict:
                 notifier.warning(f"Não foi possível atualizar Notion: {e}", AGENT_NAME)
 
         notifier.success(
-            f"✅ Tarefa '{task.get('title', task_id)}' VALIDADA como concluída!", AGENT_NAME
+            f"✅ Tarefa '{task.get('title', task_id)}' VALIDADA como concluída!",
+            AGENT_NAME,
         )
 
     elif v == "rejected":
@@ -320,6 +336,7 @@ def validate_all_completed() -> list[dict]:
 # Handoff entry point — chamado pelo Orchestrator
 # ---------------------------------------------------------------------------
 
+
 def handle_handoff(payload: dict) -> dict:
     """
     Ponto de entrada para handoffs do Orchestrator.
@@ -345,7 +362,8 @@ def handle_handoff(payload: dict) -> dict:
                 "validations": validations,
                 "total": len(validations),
                 "validated": sum(
-                    1 for v in validations
+                    1
+                    for v in validations
                     if v.get("verdict", {}).get("verdict") == "validated"
                 ),
             }

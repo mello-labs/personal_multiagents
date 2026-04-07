@@ -24,6 +24,7 @@ import time
 import json
 import datetime
 import requests
+import redis
 from typing import Any
 
 from core import memory, notifier
@@ -47,18 +48,28 @@ GITHUB_ORGS = [
 
 # Repos prioritários para monitorar dentro de cada org
 PRIORITY_REPOS = {
-    "NEO-PROTOCOL": ["neobot", "neo-dashboard", "neo-mello-eth", "mio-system", "neoflw-base-landing"],
-    "NEO-FlowOFF":  ["neo-control-plane", "neo-content-dashboard", "neo-content-accounts-api"],
+    "NEO-PROTOCOL": [
+        "neobot",
+        "neo-dashboard",
+        "neo-mello-eth",
+        "mio-system",
+        "neoflw-base-landing",
+    ],
+    "NEO-FlowOFF": [
+        "neo-control-plane",
+        "neo-content-dashboard",
+        "neo-content-accounts-api",
+    ],
     "flowpay-system": ["flowpay-api", "flowpay-app"],
     "neo-smart-factory": ["smart-core", "smart-nft", "smart-cli"],
-    "FluxxDAO":     ["fluxx-backend", "fluxx-landing"],
-    "wodxpro":      ["wod-protocol", "wod-eth", "wod-x-pro"],
+    "FluxxDAO": ["fluxx-backend", "fluxx-landing"],
+    "wodxpro": ["wod-protocol", "wod-eth", "wod-x-pro"],
 }
 
 # Serviços Railway: nome → URL de health check
 RAILWAY_SERVICES: dict[str, dict[str, str]] = {
     "neo-dashboard": {
-        "url": "https://neo-dashboard-production-2e56.up.railway.app/health",
+        "url": "https://mypersonal-multiagents.up.railway.app/health",
         "priority": "P0",
     },
     "neo-mello-eth": {
@@ -88,28 +99,31 @@ NEOFLW_CONTRACT = "0x41F4ff3d45DED9C1332e4908F637B75fe83F5d6B"
 NEOFLW_CHAIN = "base"
 
 # Thresholds
-STALE_HOURS = 72          # repo sem push → sinalizar
-ISSUE_WARN = 20           # issues abertas → warn
-PRICE_DROP_PCT = 15       # queda de preço → alert
-LIQUIDITY_MIN = 1000      # liquidez mínima USD
-VOLUME_MIN = 500          # volume 24h mínimo USD
+STALE_HOURS = 72  # repo sem push → sinalizar
+ISSUE_WARN = 20  # issues abertas → warn
+PRICE_DROP_PCT = 15  # queda de preço → alert
+LIQUIDITY_MIN = 1000  # liquidez mínima USD
+VOLUME_MIN = 500  # volume 24h mínimo USD
 
 # Redis TTL
 REDIS_TTL_SECONDS = 86400  # 24h
 
 
-# ─── Helpers HTTP ─────────────────────────────────────────────────────────────
+# ─── Helpers HTTP ──────────────────
 
-def _get(url: str, headers: dict | None = None, timeout: int = 8) -> dict | None:
+
+def _get(
+    url: str, headers: dict | None = None, timeout: int = 8
+) -> dict | None:
     try:
         resp = requests.get(url, headers=headers or {}, timeout=timeout)
         if resp.ok:
             try:
                 return resp.json()
-            except Exception:
+            except ValueError:
                 return {"_raw_status": resp.status_code, "_ok": True}
         return {"_error": resp.status_code}
-    except Exception as exc:
+    except requests.exceptions.RequestException as exc:
         return {"_exception": str(exc)}
 
 
@@ -122,6 +136,7 @@ def _github_headers() -> dict:
 
 # ─── GitHub ──────────────────────────────────────────────────────────────────
 
+
 def _hours_since(iso_str: str | None) -> float | None:
     if not iso_str:
         return None
@@ -129,7 +144,7 @@ def _hours_since(iso_str: str | None) -> float | None:
         dt = datetime.datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
         now = datetime.datetime.now(datetime.timezone.utc)
         return (now - dt).total_seconds() / 3600
-    except Exception:
+    except (ValueError, TypeError):
         return None
 
 
@@ -153,7 +168,11 @@ def check_github() -> dict:
             headers=headers,
         )
 
-        if not repos_data or "_error" in repos_data or "_exception" in repos_data:
+        if (
+            not repos_data
+            or "_error" in repos_data
+            or "_exception" in repos_data
+        ):
             org_result["status"] = "error"
             org_result["error"] = str(repos_data)
             result[org] = org_result
@@ -184,7 +203,11 @@ def check_github() -> dict:
             if hours is not None and hours <= 24:
                 org_result["repos_active_24h"] += 1
 
-            if hours is not None and hours > STALE_HOURS and name in PRIORITY_REPOS.get(org, []):
+            if (
+                hours is not None
+                and hours > STALE_HOURS
+                and name in PRIORITY_REPOS.get(org, [])
+            ):
                 org_result["repos_stale"].append(name)
 
         if org_result["repos_stale"]:
@@ -198,6 +221,7 @@ def check_github() -> dict:
 
 
 # ─── Railway ─────────────────────────────────────────────────────────────────
+
 
 def check_railway() -> dict:
     """Verifica saúde dos serviços Railway via HTTP health check."""
@@ -218,9 +242,14 @@ def check_railway() -> dict:
                 try:
                     body = resp.json()
                     svc_status = body.get("status", "ok")
-                    if str(svc_status).lower() not in ("ok", "up", "healthy", "true"):
+                    if str(svc_status).lower() not in (
+                        "ok",
+                        "up",
+                        "healthy",
+                        "true",
+                    ):
                         status = "warn"
-                except Exception:
+                except ValueError:
                     pass
             elif status_code in (301, 302, 307, 308):
                 status = "ok"  # redirect = vivo
@@ -259,6 +288,7 @@ def check_railway() -> dict:
 
 # ─── On-chain / DexScreener ───────────────────────────────────────────────────
 
+
 def check_onchain() -> dict:
     """Verifica NEOFLW via DexScreener."""
     result: dict[str, Any] = {
@@ -289,11 +319,17 @@ def check_onchain() -> dict:
 
     if not pairs:
         result["NEOFLW"]["status"] = "no_data"
-        result["NEOFLW"]["note"] = "Token sem liquidez ativa ou não indexado no DexScreener"
+        result["NEOFLW"][
+            "note"
+        ] = "Token sem liquidez ativa ou não indexado no DexScreener"
         return result
 
     # Usa o par com maior liquidez
-    pairs_sorted = sorted(pairs, key=lambda p: float(p.get("liquidity", {}).get("usd", 0) or 0), reverse=True)
+    pairs_sorted = sorted(
+        pairs,
+        key=lambda p: float(p.get("liquidity", {}).get("usd", 0) or 0),
+        reverse=True,
+    )
     pair = pairs_sorted[0]
 
     price_usd = pair.get("priceUsd")
@@ -335,6 +371,7 @@ def check_onchain() -> dict:
 
 
 # ─── Health Check ─────────────────────────────────────────────────────────────
+
 
 def health_check() -> dict:
     """Executa health check completo do ecossistema."""
@@ -397,8 +434,10 @@ def health_check() -> dict:
     try:
         memory.set_state("ecosystem:health_check:latest", result)
         memory.set_state(f"ecosystem:health_check:{now[:10]}", result)
-    except Exception as exc:
-        notifier.warning(f"Falha ao persistir health check no Redis: {exc}", AGENT_NAME)
+    except requests.exceptions.RequestException as exc:
+        notifier.warning(
+            f"Falha ao persistir health check no Redis: {exc}", AGENT_NAME
+        )
 
     notifier.info(
         f"Health check concluído: {global_status.upper()} "
@@ -412,10 +451,15 @@ def health_check() -> dict:
 
 # ─── Daily Report ─────────────────────────────────────────────────────────────
 
+
 def _status_icon(status: str) -> str:
-    return {"ok": "OK  ", "warn": "WARN", "fail": "FAIL", "unknown": "???", "no_data": "----"}.get(
-        status, "????"
-    )
+    return {
+        "ok": "OK  ",
+        "warn": "WARN",
+        "fail": "FAIL",
+        "unknown": "???",
+        "no_data": "----",
+    }.get(status, "????")
 
 
 def daily_report(data: dict | None = None) -> str:
@@ -427,7 +471,7 @@ def daily_report(data: dict | None = None) -> str:
             raw = r.get("ecosystem:health_check:latest")
             if raw:
                 data = json.loads(raw)
-        except Exception:
+        except (redis.RedisError, json.JSONDecodeError):
             pass
 
     if data is None:
@@ -448,7 +492,7 @@ def daily_report(data: dict | None = None) -> str:
     # GitHub
     gh_s = summary.get("github", {})
     lines.append("GitHub")
-    lines.append(f"  {gh_s.get('repos_active_24h', 0)} repos com atividade nas últimas 24h")
+    lines.append(f"  {gh_s.get('repos_active_24h', 0)} repos ativos (24h)")
     stale = gh_s.get("repos_stale_priority", [])
     if stale:
         lines.append(f"  WARN repos prioritários estagnados: {', '.join(stale)}")
@@ -484,14 +528,16 @@ def daily_report(data: dict | None = None) -> str:
     neoflw_status = neoflw.get("status", "unknown")
     lines.append("On-chain")
     if neoflw_status == "no_data":
-        lines.append(f"  ---- NEOFLW: sem dados no DexScreener")
+        lines.append("  ---- NEOFLW: sem dados no Coingecko")
     else:
         price = neoflw.get("price_usd", "?")
         vol = neoflw.get("volume_24h_usd", "?")
         liq = neoflw.get("liquidity_usd", "?")
         chg = neoflw.get("price_change_24h_pct", "?")
         icon = _status_icon(neoflw_status)
-        lines.append(f"  {icon} NEOFLW: ${price} | vol 24h: ${vol} | liq: ${liq} | Δ24h: {chg}%")
+        lines.append(
+            f"  {icon} NEOFLW: ${price} | vol: ${vol} | liq: ${liq} | Δ: {chg}%"
+        )
         for alert in neoflw.get("alerts", []):
             lines.append(f"       ⚠ {alert}")
 
@@ -503,7 +549,8 @@ def daily_report(data: dict | None = None) -> str:
     fail_svcs = [s for s, v in railway.items() if v.get("status") == "fail"]
     warn_svcs = [s for s, v in railway.items() if v.get("status") == "warn"]
     if fail_svcs:
-        actions.append(f"verificar serviço(s) com falha: {', '.join(fail_svcs)}")
+        msg = f"verificar serviço(s) com falha: {', '.join(fail_svcs)}"
+        actions.append(msg)
     if warn_svcs:
         actions.append(f"investigar: {', '.join(warn_svcs)}")
     if stale:
@@ -525,12 +572,15 @@ def daily_report(data: dict | None = None) -> str:
         memory.set_state("ecosystem:daily_report:latest", report)
         memory.set_state(f"ecosystem:daily_report:{today}", report)
     except Exception as exc:
-        notifier.warning(f"Falha ao persistir relatório no Redis: {exc}", AGENT_NAME)
+        notifier.warning(
+            f"Falha ao persistir relatório no Redis: {exc}", AGENT_NAME
+        )
 
     return report
 
 
-# ─── Entry point ──────────────────────────────────────────────────────────────
+# ─── Entry point ───────────────────────
+
 
 def run() -> str:
     """Executa health check completo e devolve relatório."""
@@ -540,7 +590,8 @@ def run() -> str:
     # Alerta imediato apenas para eventos graves
     rw = data.get("railway", {})
     p0_fail = [
-        s for s, v in rw.items()
+        s
+        for s, v in rw.items()
         if v.get("status") == "fail" and v.get("priority") == "P0"
     ]
     if p0_fail:

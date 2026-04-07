@@ -542,7 +542,7 @@ def cmd_fiz(rotina: str) -> None:
             "life_guard",
         )
         return
-    result = life_guard.confirm_routine(routine_id)
+    life_guard.confirm_routine(routine_id)
     notifier.success(f"Rotina '{rotina}' confirmada para hoje.", "life_guard")
 
 
