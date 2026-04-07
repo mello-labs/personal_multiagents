@@ -19,10 +19,11 @@ import sys
 from datetime import datetime
 from typing import Optional
 
+# Garante que o diretório raiz está no sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Importa os agentes especialistas
-from agents import (
+from agents import (  # noqa: E402
     calendar_sync,
     focus_guard,
     notion_sync,
@@ -30,15 +31,15 @@ from agents import (
     scheduler,
     validator,
 )
-from agents.persona_manager import (
+from agents.persona_manager import (  # noqa: E402
     get_direct_prompt,
     get_persona,
     get_synthesis_prompt,
     get_system_prompt,
     get_temperature,
 )
-from core import memory, notifier, sanity_client
-from core.openai_utils import chat_completions
+from core import memory, notifier, sanity_client  # noqa: E402
+from core.openai_utils import chat_completions  # noqa: E402
 
 AGENT_NAME = "orchestrator"
 

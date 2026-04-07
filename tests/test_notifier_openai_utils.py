@@ -32,45 +32,47 @@ def test_print_table_renders_headers_and_rows(capsys):
 def test_chat_completions_fallback(monkeypatch):
     from core import openai_utils
 
-    class FakeCompletions:
+    class FakeProvider:
         def __init__(self, side_effects):
             self.side_effects = list(side_effects)
             self.calls = []
 
-        def create(self, **kwargs):
-            self.calls.append(kwargs)
+        def complete(self, model=None, **kwargs):
+            self.calls.append({"model": model, **kwargs})
             result = self.side_effects.pop(0)
             if isinstance(result, Exception):
                 raise result
             return result
 
-    class FakeChat:
-        def __init__(self, completions):
-            self.completions = completions
-
-    class FakeClient:
-        def __init__(self, completions):
-            self.chat = FakeChat(completions)
-
     response = SimpleNamespace(
         choices=[SimpleNamespace(message=SimpleNamespace(content="ok"))]
     )
-    completions = FakeCompletions([RuntimeError("primary failed"), response])
+    fake_cloud = FakeProvider([RuntimeError("primary failed"), response])
 
     warnings: list[str] = []
     errors: list[str] = []
 
-    monkeypatch.setattr(openai_utils, "_client", FakeClient(completions))
-    monkeypatch.setattr(openai_utils, "OPENAI_MODEL", "primary")
-    monkeypatch.setattr(openai_utils, "OPENAI_FALLBACK_MODEL", "fallback")
-    monkeypatch.setattr(openai_utils.notifier, "warning", lambda msg, *_: warnings.append(msg))
-    monkeypatch.setattr(openai_utils.notifier, "error", lambda msg, *_: errors.append(msg))
+    # Cria uma chain de teste
+    test_chain = openai_utils.LLMChain(
+        cloud=fake_cloud,
+        local=None,
+        primary_model="primary",
+        fallback_model="fallback",
+    )
+
+    monkeypatch.setattr(openai_utils, "_chain", test_chain)
+    monkeypatch.setattr(
+        openai_utils.notifier, "warning", lambda msg, *_: warnings.append(msg)
+    )
+    monkeypatch.setattr(
+        openai_utils.notifier, "error", lambda msg, *_: errors.append(msg)
+    )
 
     result = openai_utils.chat_completions(messages=[{"role": "user", "content": "Oi"}])
 
     assert result.choices[0].message.content == "ok"
-    assert completions.calls[0]["model"] == "primary"
-    assert completions.calls[1]["model"] == "fallback"
+    assert fake_cloud.calls[0]["model"] == "primary"
+    assert fake_cloud.calls[1]["model"] == "fallback"
     assert len(warnings) == 1
     assert errors == []
 
