@@ -1625,10 +1625,11 @@
             })
             .then(function (html) {
               // Update cookie client-side as backup
+              var _sec = location.protocol === "https:" ? ";secure" : "";
               document.cookie =
                 "multiagentes_persona=" +
                 id +
-                ";path=/;max-age=31536000;samesite=lax";
+                ";path=/;max-age=31536000;samesite=lax" + _sec;
               // Show toast
               var sel = document.querySelector(".persona-select");
               var opt = sel ? sel.options[sel.selectedIndex] : null;

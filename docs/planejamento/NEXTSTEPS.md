@@ -181,8 +181,8 @@ Usos não recomendados:
   - Commit: `59250b9`, `5c6af40`, `0ac0cc6`
 
 - [ ] Validar UX do chat no iPhone após deploy Railway
-  - Status: TODO
-  - Log: confirmar se input limpa após envio, se contexto persiste após refresh e se respostas de capacidade do sistema não caem em texto genérico.
+  - Status: IN_PROGRESS
+  - Log: 3 bugs corrigidos — (1) mensagem do usuário agora aparece imediatamente via optimistic UI antes da resposta do LLM; (2) input limpa no momento do envio, não após a resposta; (3) cookies de sessão e persona agora incluem `secure=True` em HTTPS para corrigir perda de memória no Railway. Aguarda validação pós-deploy.
   - Commit: pendente
 
 ### Fase 1. Governança dos agentes

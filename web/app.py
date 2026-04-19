@@ -484,6 +484,12 @@ def _agenda_history_ctx(start_date: str | None, end_date: str | None) -> dict:
     }
 
 
+def _is_https(request: Request) -> bool:
+    """Detecta HTTPS via proxy header (Railway/Vercel) ou scheme direto."""
+    proto = request.headers.get("x-forwarded-proto", "")
+    return proto == "https" or request.url.scheme == "https"
+
+
 def _get_chat_session_id(request: Request) -> tuple[str, bool]:
     current = request.cookies.get(CHAT_SESSION_COOKIE)
     if current:
@@ -691,6 +697,8 @@ async def chat(request: Request, message: str = Form(...)):
             session_id,
             httponly=True,
             samesite="lax",
+            secure=_is_https(request),
+            max_age=CHAT_HISTORY_TTL_SECONDS,
         )
     return template_response
 
@@ -887,6 +895,7 @@ async def switch_persona(request: Request, persona_id: str):
         persona_id,
         httponly=True,
         samesite="lax",
+        secure=_is_https(request),
         max_age=60 * 60 * 24 * 365,
     )
     return response

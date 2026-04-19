@@ -15,6 +15,7 @@ reports/
 token.json
 credentials.json
 *.plist
+*.pdf
 .DS_Store
 tests
 
