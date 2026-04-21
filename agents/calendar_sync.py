@@ -136,7 +136,8 @@ def fetch_events_range(start_date: str, end_date: str) -> list[dict]:
         return []
 
     start_dt, end_dt = _normalize_date_range(start_date, end_date)
-    time_min = datetime.combine(start_dt, datetime.min.time()).isoformat() + "Z"
+    time_min = datetime.combine(
+        start_dt, datetime.min.time()).isoformat() + "Z"
     time_max = (
         datetime.combine(end_dt + timedelta(days=1), datetime.min.time()).isoformat()
         + "Z"

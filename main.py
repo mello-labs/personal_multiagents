@@ -710,6 +710,40 @@ Exemplos:
         "ecosistema", help="Health check e relatório do ecossistema externo"
     )
 
+    # github projects → Notion (Command Center)
+    github_parser = subparsers.add_parser(
+        "github",
+        help="GitHub Projects v2: discover (manifests) e sync para NOTION_DB_TAREFAS",
+    )
+    gh_sub = github_parser.add_subparsers(
+        dest="github_action",
+        metavar="AÇÃO",
+        required=True,
+    )
+    gh_disc = gh_sub.add_parser(
+        "discover",
+        help="Compara manifests neomello/*/manifests com GITHUB_PROJECTS em config",
+    )
+    gh_disc.add_argument(
+        "--root",
+        default=None,
+        help="Pasta raiz dos org workspaces (default: NEOMELLO_WORKSPACES_ROOT)",
+    )
+    gh_sync = gh_sub.add_parser(
+        "sync",
+        help="Importa issues/PRs dos boards configurados para o Notion",
+    )
+    gh_sync.add_argument(
+        "--org",
+        default=None,
+        help="Sincroniza só esta org (ex: flowpay-system). Default: todas em config.",
+    )
+    gh_sync.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Só lista o que seria criado/atualizado (sem Notion/Redis)",
+    )
+
     # capture (segundo cérebro)
     capture_parser = subparsers.add_parser(
         "capture",
@@ -765,6 +799,35 @@ def cmd_capture(text: str) -> None:
     else:
         notifier.error(f"Falhou: {result.get('error')}", "capture")
         print(_json.dumps(result, indent=2, ensure_ascii=False))
+
+
+def cmd_github(args) -> None:
+    """GitHub Projects v2: discover local manifests ou sync → Notion."""
+    from pathlib import Path
+
+    from agents import github_projects
+
+    if args.github_action == "discover":
+        root = Path(args.root).expanduser() if args.root else None
+        text = github_projects.discover_compare_with_config(
+            root_override=root,
+        )
+        print(text)
+    elif args.github_action == "sync":
+        if args.org:
+            c, u = github_projects.sync_org_to_notion(
+                args.org.strip(),
+                dry_run=args.dry_run,
+            )
+            notifier.separator("GITHUB → NOTION")
+            notifier.info(f"{args.org}: criadas={c} atualizadas={u}", "github")
+            notifier.separator()
+        else:
+            res = github_projects.sync_all_orgs(dry_run=args.dry_run)
+            notifier.separator("GITHUB → NOTION (todas as orgs)")
+            for org, (c, u) in res.items():
+                notifier.info(f"{org}: criadas={c} atualizadas={u}", "github")
+            notifier.separator()
 
 
 def cmd_classify(text: str) -> None:
@@ -829,6 +892,8 @@ def main() -> None:
 
         report = ecosystem_monitor.run()
         print(report)
+    elif command == "github":
+        cmd_github(args)
     elif command in ("vida", "life"):
         cmd_vida()
     elif command == "pagar":

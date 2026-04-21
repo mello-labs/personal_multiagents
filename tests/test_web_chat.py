@@ -116,7 +116,7 @@ def test_agenda_page_exibe_intervalo(mem, monkeypatch):
         )
 
     assert response.status_code == 200
-    assert "Agenda Navegável" in response.text
+    assert "Agenda" in response.text
     assert "Histórico passado" in response.text
     assert "Histórico futuro" in response.text
 

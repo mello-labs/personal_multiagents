@@ -1,12 +1,13 @@
 <!-- markdownlint-disable MD003 MD007 MD013 MD022 MD023 MD025 MD029 MD032 MD033 MD034 -->
+# MULTIAGENTS
+
+![multiagentes banner](./docs/assets/multiagentes-banner.svg)
 
 ```text
 ========================================
       MULTIAGENTES · PERSONAL CORE
 ========================================
 ```
-
-![multiagentes banner](./docs/assets/multiagentes-banner.svg)
 
 Portal providing access to the multi-agent nodes
 that serve the NEØ architect.
@@ -141,7 +142,7 @@ make test-q
 
 ```text
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ SURFACE              PURPOSE        ┃
+┃ SURFACE              PURPOSE        
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ Web UI               dashboard,
 ┃                      agenda, audit,
@@ -381,11 +382,15 @@ python main.py calendar status     # Status da integração opcional
 
 ## Documentation
 
+**Workspace & agent blueprints:** [AGENTS.md](./AGENTS.md) · [MEMORY.md](./MEMORY.md)
+
 ```text
 ▓▓▓ ENTRYPOINT
 ────────────────────────────────────────
 └─ docs/INDEX.md                               índice mestre
-└─ ROADMAP.md                                 roadmap geral do produto
+└─ ROADMAP.md                                  roadmap geral do produto
+└─ AGENTS.md                                   contexto workspace · operadores e IA
+└─ MEMORY.md                                   blueprints latentes · Notion / Railway / agenda
 
 ▓▓▓ OPERAÇÃO
 ────────────────────────────────────────

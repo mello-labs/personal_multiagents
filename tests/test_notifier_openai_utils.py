@@ -52,12 +52,12 @@ def test_chat_completions_fallback(monkeypatch):
     warnings: list[str] = []
     errors: list[str] = []
 
-    # Cria uma chain de teste
+    # Cria uma chain de teste (API: cloud_primary / cloud_fallback)
     test_chain = openai_utils.LLMChain(
         cloud=fake_cloud,
+        cloud_primary="primary",
+        cloud_fallback="fallback",
         local=None,
-        primary_model="primary",
-        fallback_model="fallback",
     )
 
     monkeypatch.setattr(openai_utils, "_chain", test_chain)
