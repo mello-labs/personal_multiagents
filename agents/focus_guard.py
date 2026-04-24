@@ -435,6 +435,30 @@ def _run_differential_sync() -> None:
         notifier.warning(f"Erro no auto-sync diferencial: {e}", AGENT_NAME)
 
 
+def _run_ecosystem_check() -> None:
+    try:
+        from agents import ecosystem_monitor as _eco
+        _eco.run()
+    except Exception as e:
+        notifier.warning(f"Erro no ecosystem check: {e}", AGENT_NAME)
+
+
+def _run_github_sync() -> None:
+    try:
+        from agents import github_projects as _gh
+        _gh.sync_all_orgs(dry_run=False)
+    except Exception as e:
+        notifier.warning(f"Erro no github sync: {e}", AGENT_NAME)
+
+
+def _run_retrospective() -> None:
+    try:
+        from agents import retrospective as _retro
+        _retro.run_retrospective(push_to_notion=True)
+    except Exception as e:
+        notifier.warning(f"Erro na retrospective: {e}", AGENT_NAME)
+
+
 def _background_loop() -> None:
     """Thread principal do Focus Guard — roda o scheduler.run_pending() em loop."""
     # Lê configuração do Sanity; cai nos valores de env/config.py se indisponível
@@ -457,6 +481,15 @@ def _background_loop() -> None:
 
     # Configura sync diferencial periódico
     schedule.every(NOTION_SYNC_INTERVAL_MINUTES).minutes.do(_run_differential_sync)
+
+    # Ecosystem: health check a cada 60 min
+    schedule.every(60).minutes.do(_run_ecosystem_check)
+
+    # GitHub Projects: sync a cada 30 min
+    schedule.every(30).minutes.do(_run_github_sync)
+
+    # Retrospective: diariamente às 21h
+    schedule.every().day.at("21:00").do(_run_retrospective)
 
     # Executa uma verificação imediata ao iniciar (protegida contra falha de Redis)
     try:
