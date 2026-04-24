@@ -17,7 +17,7 @@ arquivo pode ser deletado com segurança.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Optional
 
 __all__ = [
     "get_prompt",
