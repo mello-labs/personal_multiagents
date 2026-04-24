@@ -82,11 +82,19 @@ def _start_local_redis() -> None:
 
 def _r() -> redis_lib.Redis:
     global _redis_client
-    # Always initialize inside _init_lock to guarantee visibility across threads
-    # without relying on double-checked locking semantics.
+    # Fast path: avoid taking _init_lock once the singleton has already been
+    # initialized, so concurrent read-only callers do not serialize on every
+    # Redis access.
+    client = _redis_client
+    if client is not None:
+        return client
+
+    # Slow path: initialize under _init_lock, with a second check in case
+    # another thread completed initialization while we were waiting.
     with _init_lock:
-        if _redis_client is not None:
-            return _redis_client
+        client = _redis_client
+        if client is not None:
+            return client
         client = redis_lib.from_url(
             REDIS_URL, decode_responses=True, socket_connect_timeout=2
         )
