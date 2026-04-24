@@ -6,7 +6,7 @@
   id="stats-row"
   class="metrics"
   hx-get="/status"
-  hx-trigger="every 20s"
+  hx-trigger="every 60s [document.visibilityState==='visible']"
   hx-swap="outerHTML"
 >
   <div class="metric m-blue">

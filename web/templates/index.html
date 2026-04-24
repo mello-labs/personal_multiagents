@@ -13,7 +13,7 @@
   id="stats-row"
   class="metrics"
   hx-get="/status"
-  hx-trigger="every 20s"
+  hx-trigger="every 60s [document.visibilityState==='visible']"
   hx-swap="outerHTML"
 >
   <div class="metric m-blue">
@@ -67,7 +67,7 @@
   <div
     id="agenda-body"
     hx-get="/agenda"
-    hx-trigger="every 30s, refresh"
+    hx-trigger="every 90s [document.visibilityState==='visible'], refresh"
     hx-swap="innerHTML"
   >
     {% include "partials/agenda.html" %}
@@ -83,7 +83,7 @@
   <div
     id="tasks-body"
     hx-get="/tasks"
-    hx-trigger="every 30s"
+    hx-trigger="every 120s [document.visibilityState==='visible']"
     hx-swap="innerHTML"
   >
     {% include "partials/tasks.html" %}
