@@ -118,7 +118,8 @@
       "Bash(curl -s \"https://api.github.com/orgs/NEO-PROTOCOL/repos\")",
       "Bash(curl -s \"https://api.github.com/orgs/NEO-PROTOCOL/projects\")",
       "Bash(curl -s \"https://api.github.com/orgs/NEO-PROTOCOL/repos?per_page=100\")",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Bash(gh api *)"
     ]
   },
   "disabledMcpjsonServers": [
