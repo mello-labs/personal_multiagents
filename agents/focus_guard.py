@@ -7,28 +7,22 @@
 #   3. Emite alertas/cobranças no terminal
 #   4. Registra desvios no banco de dados
 #
-# O loop principal usa a lib `schedule` para disparos periódicos.
-# A thread roda como daemon e é parada por um Event.
+# O loop de background e o agendamento dos demais agentes ficam em
+# scheduler/runner.py. Este módulo registra apenas _run_focus_check.
 
 import json
-import os
 import sys
 import threading
-import time
 from datetime import date, datetime
 from typing import Optional
 
-import schedule
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents import notion_sync as _notion_sync
 from agents import scheduler as _scheduler
 from config import (
     FOCUS_CHECK_INTERVAL_MINUTES,
-    NOTION_SYNC_INTERVAL_MINUTES,
 )
-from core import memory, notifier, sanity_client
+from core import memory, notifier
 from core.openai_utils import chat_completions
 
 AGENT_NAME = "focus_guard"
@@ -64,7 +58,6 @@ ESCALATION_LEVELS = [
 # Estado interno do Focus Guard
 _state_key = "focus_guard_state"
 _stop_event = threading.Event()
-_guard_thread: Optional[threading.Thread] = None
 
 
 # Prompt para análise de desvio via LLM
@@ -85,9 +78,7 @@ Retorne JSON com:
 
 
 def _get_deviation_prompt() -> str:
-    return sanity_client.get_prompt(
-        "focus_guard", "deviation", _DEVIATION_PROMPT_FALLBACK
-    )
+    return _DEVIATION_PROMPT_FALLBACK
 
 
 def _get_runtime_environment() -> str:
@@ -95,25 +86,7 @@ def _get_runtime_environment() -> str:
 
 
 def _get_intervention_levels() -> list[dict]:
-    scripts = sanity_client.get_intervention_scripts(AGENT_NAME)
-    current_env = _get_runtime_environment()
-    levels = []
-    for script in scripts:
-        scope = script.get("environment_scope", "all")
-        if scope not in {"all", current_env}:
-            continue
-        levels.append(
-            {
-                "minutes": script.get("trigger_minutes"),
-                "channel": script.get("channel", "log_only"),
-                "sound": script.get("sound", False),
-                "msg": script.get("message", ""),
-                "title": script.get("title", "NEO Focus Guard"),
-            }
-        )
-
-    levels = [level for level in levels if isinstance(level.get("minutes"), int)]
-    return levels or ESCALATION_LEVELS
+    return ESCALATION_LEVELS
 
 
 # ---------------------------------------------------------------------------
@@ -426,7 +399,7 @@ def _run_focus_check(
 
 
 def _run_differential_sync() -> None:
-    """Callback do scheduler para sync diferencial periódico."""
+    """Delegado ao runner — mantido aqui para compatibilidade com focus_guard_service."""
     try:
         count = _notion_sync.sync_differential()
         if count:
@@ -435,123 +408,23 @@ def _run_differential_sync() -> None:
         notifier.warning(f"Erro no auto-sync diferencial: {e}", AGENT_NAME)
 
 
-_ecosystem_lock = threading.Lock()
-_github_lock = threading.Lock()
-_retrospective_lock = threading.Lock()
-
-
-def _fire_and_forget(fn, lock: threading.Lock, name: str) -> None:
-    """Dispara fn em thread daemon com lock anti-overlap."""
-    if not lock.acquire(blocking=False):
-        notifier.info(f"{name} ainda em execução — pulando rodada.", AGENT_NAME)
-        return
-
-    def _run():
-        try:
-            fn()
-        except Exception as e:
-            notifier.warning(f"Erro em {name}: {e}", AGENT_NAME)
-        finally:
-            lock.release()
-
-    threading.Thread(target=_run, name=name, daemon=True).start()
-
-
-def _run_ecosystem_check() -> None:
-    def _do():
-        from agents import ecosystem_monitor as _eco
-        _eco.run()
-    _fire_and_forget(_do, _ecosystem_lock, "ecosystem_monitor")
-
-
-def _run_github_sync() -> None:
-    from config import NOTION_TOKEN, GITHUB_TOKEN
-    if not NOTION_TOKEN or not GITHUB_TOKEN:
-        notifier.info("github_sync ignorado: NOTION_TOKEN ou GITHUB_TOKEN ausente.", AGENT_NAME)
-        return
-
-    def _do():
-        from agents import github_projects as _gh
-        _gh.sync_all_orgs(dry_run=False)
-    _fire_and_forget(_do, _github_lock, "github_projects")
-
-
-def _run_retrospective() -> None:
-    def _do():
-        from agents import retrospective as _retro
-        _retro.run_retrospective(push_to_notion=True)
-    _fire_and_forget(_do, _retrospective_lock, "retrospective")
-
-
-def _background_loop() -> None:
-    """Thread principal do Focus Guard — roda o scheduler.run_pending() em loop."""
-    # Lê configuração do Sanity; cai nos valores de env/config.py se indisponível
-    cfg = sanity_client.get_agent_config(AGENT_NAME) or {}
-    if not cfg.get("enabled", True):
-        notifier.warning(
-            "Focus Guard desabilitado via Sanity (agent_config.enabled=false). Encerrando loop.",
-            AGENT_NAME,
-        )
-        return
-    interval = int(cfg.get("check_interval_minutes") or FOCUS_CHECK_INTERVAL_MINUTES)
-    if interval != FOCUS_CHECK_INTERVAL_MINUTES:
-        notifier.info(
-            f"Intervalo de check lido do Sanity: {interval} min (env={FOCUS_CHECK_INTERVAL_MINUTES}).",
-            AGENT_NAME,
-        )
-
-    # Configura o job periódico de check de foco
-    schedule.every(interval).minutes.do(_run_focus_check)
-
-    # Configura sync diferencial periódico
-    schedule.every(NOTION_SYNC_INTERVAL_MINUTES).minutes.do(_run_differential_sync)
-
-    # Ecosystem: health check a cada 60 min
-    schedule.every(60).minutes.do(_run_ecosystem_check)
-
-    # GitHub Projects: sync a cada 30 min (fire-and-forget, com guard de pré-requisitos)
-    schedule.every(30).minutes.do(_run_github_sync)
-
-    # Retrospective: semanalmente às 21h, toda segunda-feira
-    schedule.every().monday.at("21:00").do(_run_retrospective)
-
-    # Executa uma verificação imediata ao iniciar (protegida contra falha de Redis)
-    try:
-        _run_focus_check()
-    except Exception as e:
-        notifier.warning(
-            f"Check inicial ignorado (Redis indisponível?): {e}", AGENT_NAME
-        )
-
-    while not _stop_event.is_set():
-        try:
-            schedule.run_pending()
-        except Exception as e:
-            notifier.warning(f"Erro no scheduler (ignorado): {e}", AGENT_NAME)
-        time.sleep(30)  # Polling a cada 30 segundos
-
-    notifier.info("Focus Guard encerrado.", AGENT_NAME)
-
-
 # ---------------------------------------------------------------------------
 # API pública — start/stop da thread de background
 # ---------------------------------------------------------------------------
 
+_guard_thread: threading.Thread | None = None
+
 
 def start_guard() -> None:
-    """Inicia o Focus Guard em background thread (daemon)."""
+    """Inicia o Focus Guard em background thread (delegando ao scheduler/runner)."""
     global _guard_thread
-    if _guard_thread and _guard_thread.is_alive():
+    from scheduler import runner
+    if runner._runner_thread and runner._runner_thread.is_alive():
         notifier.warning("Focus Guard já está rodando.", AGENT_NAME)
         return
 
-    _stop_event.clear()
-    _guard_thread = threading.Thread(
-        target=_background_loop,
-        name="FocusGuardThread",
-        daemon=True,
-    )
-    _guard_thread.start()
+    runner.start(_run_focus_check)
+    _guard_thread = runner._runner_thread
     notifier.success(
         f"Focus Guard em background (check a cada {FOCUS_CHECK_INTERVAL_MINUTES} min).",
         AGENT_NAME,
@@ -560,14 +433,15 @@ def start_guard() -> None:
 
 def stop_guard() -> None:
     """Para o Focus Guard."""
-    _stop_event.set()
-    schedule.clear()
+    from scheduler import runner
+    runner.stop()
     notifier.info("Focus Guard parado.", AGENT_NAME)
 
 
 def is_running() -> bool:
     """Verifica se o Focus Guard está ativo."""
-    return _guard_thread is not None and _guard_thread.is_alive()
+    from scheduler import runner
+    return runner._runner_thread is not None and runner._runner_thread.is_alive()
 
 
 def force_check() -> dict:
